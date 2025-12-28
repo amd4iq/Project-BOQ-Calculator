@@ -3,6 +3,7 @@ import { Category } from '../types';
 import { BASE_PRICE } from '../constants';
 import { formatCurrency } from '../utils/format';
 import { Icon } from './Icons';
+import { QualityIndicator } from './QualityIndicator';
 
 interface PriceBreakdownProps {
   categories: Category[];
@@ -131,60 +132,67 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
         <div className="p-6 print:p-0">
             
             {/* SCREEN ONLY: Summary Cards */}
-            <div className="mb-8 print:hidden">
-                {/* Total Card - Made Lighter (slate-700 instead of slate-900) */}
-                <div className="bg-slate-700 rounded-xl p-5 text-white shadow-lg relative overflow-hidden group">
-                     <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
-                     <div className="relative z-10">
-                        <span className="text-slate-300 text-xs font-bold uppercase tracking-wider">السعر الإجمالي النهائي</span>
-                        <div className="mt-1 flex items-baseline gap-1">
-                            <span className="text-3xl font-black tracking-tight">{formatCurrency(grandTotal)}</span>
-                            <span className="text-sm font-medium text-emerald-400">IQD</span>
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-slate-600 flex justify-between items-center text-xs text-slate-300">
-                             <span>سعر المتر المربع الفعلي:</span>
-                             <span className="text-white font-mono font-bold">{formatCurrency(grandTotal / areaSize)}</span>
-                        </div>
-                     </div>
+            <div className="mb-6 print:hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Total Card */}
+                  <div className="bg-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group h-full">
+                      <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
+                      <div className="relative z-10 flex flex-col h-full justify-between">
+                          <div>
+                            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">السعر الإجمالي النهائي</span>
+                            <div className="mt-1 flex items-baseline gap-2">
+                                <span className="text-3xl font-black tracking-tight">{formatCurrency(grandTotal)}</span>
+                                <span className="text-sm font-medium text-emerald-400">IQD</span>
+                            </div>
+                          </div>
+                          <div className="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center text-xs text-slate-400">
+                              <span>سعر المتر المربع الفعلي:</span>
+                              <span className="text-white font-mono font-bold">{formatCurrency(Math.round(grandTotal / areaSize))}</span>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Quality Indicator Integrated Here */}
+                  <QualityIndicator categories={categories} selections={selections} />
                 </div>
             </div>
 
             {/* SCREEN: List (Simplified) */}
             <div className="print:hidden space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">تفاصيل الاحتساب</h4>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">تفاصيل الاحتساب</h4>
                 
                 {/* Base Price Row */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                     <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                             <span className="font-bold font-serif text-lg">A</span>
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-slate-100/50">
+                     <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 text-primary-600 flex items-center justify-center shadow-sm">
+                             <Icon name="template" size={20} />
                          </div>
                          <div>
-                             <p className="font-bold text-slate-800 text-sm">السعر الأساسي للمتر</p>
+                             <p className="font-bold text-slate-800 text-sm">السعر الأساسي للهيكل</p>
                              <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                                  {formatCurrency(BASE_PRICE)} × {areaSize} م²
                              </p>
                          </div>
                      </div>
-                     <span className="font-bold text-slate-700">{formatCurrency(baseTotal)}</span>
+                     <span className="font-black text-slate-700">{formatCurrency(baseTotal)}</span>
                 </div>
 
-                {/* Combined Additions Row (Replacing Detailed List) */}
+                {/* Combined Additions Row */}
                 {additionsTotal > 0 && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100 gap-2 sm:gap-0">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                                <Icon name="layers" size={18} />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 gap-2 sm:gap-0 transition-all hover:bg-emerald-100/30">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-white border border-emerald-200 text-emerald-600 flex items-center justify-center shadow-sm shrink-0">
+                                <Icon name="layers" size={20} />
                             </div>
                             <div>
                                 <p className="font-bold text-slate-800 text-sm">مجموع الإضافات والمواصفات</p>
                                 <p className="text-[10px] text-slate-500 mt-0.5">
-                                    قيمة جميع الفقرات الإضافية المختارة
+                                    قيمة جميع البنود الاختيارية المضافة
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center justify-end gap-2 pl-12 sm:pl-0">
-                            <span className="font-bold text-emerald-700 text-sm bg-white px-2 py-1 rounded-lg border border-emerald-100 shadow-sm">
+                        <div className="flex items-center justify-end gap-2 pr-12 sm:pl-0">
+                            <span className="font-black text-emerald-700 text-sm bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-sm">
                                 + {formatCurrency(additionsTotal)}
                             </span>
                         </div>
@@ -242,10 +250,10 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
       </div>
       
       {/* Footer Disclaimer */}
-      <div className="text-center print:hidden bg-amber-50 p-3 rounded-lg border border-amber-100">
-          <p className="text-[10px] text-amber-800/70 font-bold flex items-center justify-center gap-1">
-              <Icon name="zap" size={12} />
-              الأسعار أعلاه تقديرية وقد تختلف قليلاً بناءً على موقع العمل وتغيرات السوق
+      <div className="text-center print:hidden bg-amber-50 p-4 rounded-2xl border border-amber-100">
+          <p className="text-[10px] text-amber-800/70 font-bold flex items-center justify-center gap-2">
+              <Icon name="zap" size={12} className="fill-amber-400 text-amber-500" />
+              الأسعار الموضحة أعلاه هي أسعار تقديرية تخضع للتغيير بناءً على ظروف موقع العمل وتذبذب أسعار السوق العالمية للمواد.
           </p>
       </div>
 
