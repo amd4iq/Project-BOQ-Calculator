@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Category } from '../types';
 import { formatCurrency } from '../utils/format';
@@ -16,12 +17,11 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
   selectedIds, 
   onSelect,
   onEditCategory,
-  onUpdateCategory
+  onUpdateCategory,
 }) => {
   const [quickLabel, setQuickLabel] = useState('');
   const [quickCost, setQuickCost] = useState('');
 
-  // Calculate total of selected items
   const selectedTotal = category.options
     .filter(opt => selectedIds.includes(opt.id))
     .reduce((sum, opt) => sum + opt.cost, 0);
@@ -39,7 +39,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
     
     const updatedCategory = {
         ...category,
-        options: [newOption, ...category.options] // Add to top
+        options: [newOption, ...category.options]
     };
     
     onUpdateCategory(updatedCategory);
@@ -62,10 +62,11 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
       if (e.key === 'Enter') handleQuickAdd();
   }
 
+  const priceHeader = 'السعر الإفرادي';
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-in fade-in zoom-in-95 duration-300">
       
-      {/* Header */}
       <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-4">
           <div className="bg-indigo-100 text-indigo-600 p-2.5 rounded-xl shadow-sm">
@@ -88,20 +89,18 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
         </button>
       </div>
 
-      {/* Table Area */}
       <div className="flex-1 overflow-x-auto">
         <table className="w-full text-sm text-right">
           <thead>
             <tr className="border-b border-slate-100 text-slate-500 bg-slate-50/30">
               <th className="px-6 py-3 font-extrabold w-16 text-center">#</th>
               <th className="px-6 py-3 font-extrabold w-1/2">تفاصيل البند / الخدمة</th>
-              <th className="px-6 py-3 font-extrabold text-left">السعر الإفرادي</th>
+              <th className="px-6 py-3 font-extrabold text-left">{priceHeader}</th>
               <th className="px-6 py-3 font-extrabold w-32 text-center">الحالة</th>
               <th className="px-4 py-3 w-16"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {/* Quick Add Row */}
             <tr className="bg-slate-50/80 border-b border-slate-100 shadow-inner">
                 <td className="px-6 py-3 text-center">
                     <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
@@ -124,7 +123,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
                         value={quickCost}
                         onChange={(e) => setQuickCost(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="السعر"
+                        placeholder={priceHeader}
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all placeholder:text-slate-400 font-mono"
                     />
                 </td>
@@ -150,6 +149,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
             ) : (
                 category.options.map((option, index) => {
                 const isSelected = selectedIds.includes(option.id);
+                const value = option.cost;
                 
                 return (
                     <tr 
@@ -173,7 +173,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
                             inline-block px-3 py-1 rounded-lg font-mono font-bold text-sm
                             ${isSelected ? 'bg-white text-emerald-600 border border-emerald-100 shadow-sm' : 'text-slate-500 bg-slate-100'}
                          `}>
-                             {formatCurrency(option.cost)}
+                             {formatCurrency(value)}
                          </span>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -205,7 +205,6 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
         </table>
       </div>
 
-      {/* Footer Summary */}
       <div className="bg-slate-50 p-4 border-t border-slate-200 flex items-center justify-between">
          <div className="text-xs text-slate-500 font-medium px-2">
              عدد البنود المختارة: <span className="font-bold text-slate-900">{selectedIds.length}</span>

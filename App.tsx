@@ -1,274 +1,436 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { CATEGORIES, DEFAULT_SELECTIONS, BASE_PRICE, DEFAULT_STANDARD_SPECS, DEFAULT_PAYMENT_SCHEDULE } from './constants';
-import { OptionSelector } from './components/OptionSelector';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { 
+  QuoteType, 
+  SavedQuote, 
+  SelectionState, 
+  Category, 
+  ProjectDetails, 
+  AreaRow, 
+  Space, 
+  StandardSpec, 
+  PrintSettings as PrintSettingsType,
+  PaymentStage 
+} from './types';
+import { getConstantsForQuoteType } from './constants';
+import { calculateQuoteTotals } from './utils/calculations';
+import { downloadJSON, downloadCSV } from './utils/export';
+
+// Components
+import { QuoteTypeSelector } from './components/QuoteTypeSelector';
+import { QuoteSidebar } from './components/QuoteSidebar';
+import { ProjectInfo } from './components/ProjectInfo';
+import { TechnicalSpecsTable } from './components/TechnicalSpecsTable';
 import { PriceBreakdown } from './components/PriceBreakdown';
 import { PaymentSchedule } from './components/PaymentSchedule';
-import { ProjectInfo } from './components/ProjectInfo';
-import { CategoryEditor } from './components/CategoryEditor';
-import { StandardSpecs } from './components/StandardSpecs';
-import { QuoteSidebar } from './components/QuoteSidebar';
-import { PrintSettings } from './components/PrintSettings';
 import { FixedAdditionsTable } from './components/FixedAdditionsTable';
-import { formatCurrency } from './utils/format';
-import { calculateQuoteTotals } from './utils/calculations';
-import { downloadCSV, downloadJSON } from './utils/export';
-import { SelectionState, Category, ProjectDetails, StandardSpec, SavedQuote, GlobalState, PrintSettings as PrintSettingsType, PaymentStage, AreaRow } from './types';
+import { StandardSpecs } from './components/StandardSpecs';
+import { PrintSettings } from './components/PrintSettings';
+import { CategoryEditor } from './components/CategoryEditor';
 import { Icon } from './components/Icons';
 
-type TabType = 'standard' | 'technical' | 'additions';
+const LOCAL_STORAGE_KEY = 'construction_quotes_v1';
 
-const STORAGE_KEY_V2 = 'boq_calculator_v2';
-
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
-const defaultPrintSettings: PrintSettingsType = {
-  showDetails: true,
-  showFooter: true,
-  notes: '',
-  showLogo: true 
-};
-
-const defaultProjectDetails: ProjectDetails = {
-  employeeName: '',
-  customerName: '',
-  projectName: '',
-  customerNumber: '',
-  date: new Date().toISOString().split('T')[0],
-  areaSize: 200 
-};
-
-const createNewQuote = (): SavedQuote => ({
-  id: generateId(),
-  lastModified: Date.now(),
-  categories: CATEGORIES,
-  selections: DEFAULT_SELECTIONS,
-  projectDetails: defaultProjectDetails,
-  standardSpecs: DEFAULT_STANDARD_SPECS,
-  printSettings: defaultPrintSettings,
-  paymentSchedule: DEFAULT_PAYMENT_SCHEDULE,
-  areaBreakdown: []
-});
-
+/**
+ * Main Application Component
+ * Manages the state of construction quotes, handling creation, selection, 
+ * and updates of project specifications and pricing.
+ */
 const App: React.FC = () => {
-  const loadInitialState = (): GlobalState => {
-    if (typeof window === 'undefined') {
-      const initialQuote = createNewQuote();
-      return { quotes: [initialQuote], currentQuoteId: initialQuote.id };
-    }
-    
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_V2);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      const initialQuote = createNewQuote();
-      return { quotes: [initialQuote], currentQuoteId: initialQuote.id };
-    } catch (e) {
-      const initialQuote = createNewQuote();
-      return { quotes: [initialQuote], currentQuoteId: initialQuote.id };
-    }
-  };
-
-  const [globalState, setGlobalState] = useState<GlobalState>(loadInitialState);
+  const [quotes, setQuotes] = useState<SavedQuote[]>([]);
+  const [currentQuoteId, setCurrentQuoteId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'technical' | 'additions' | 'standard'>('technical');
   
-  const currentQuote = useMemo(() => {
-    return globalState.quotes.find(q => q.id === globalState.currentQuoteId) || globalState.quotes[0];
-  }, [globalState]);
-
-  const { grandTotal } = calculateQuoteTotals(
-      currentQuote.categories,
-      currentQuote.selections,
-      currentQuote.projectDetails.areaSize
-  );
-
-  const [activeTab, setActiveTab] = useState<TabType>('technical');
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPrintSettingsOpen, setIsPrintSettingsOpen] = useState(false);
-  
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Load quotes from localStorage on initial mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(globalState));
-  }, [globalState]);
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.quotes) setQuotes(parsed.quotes);
+        if (parsed.currentQuoteId) setCurrentQuoteId(parsed.currentQuoteId);
+      } catch (e) {
+        console.error("Failed to parse saved quotes", e);
+      }
+    }
+  }, []);
 
-  const updateCurrentQuote = (updater: (quote: SavedQuote) => SavedQuote) => {
-    setGlobalState(prev => ({
-      ...prev,
-      quotes: prev.quotes.map(q => q.id === prev.currentQuoteId ? { ...updater(q), lastModified: Date.now() } : q)
-    }));
-  };
+  // Persist quotes to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ quotes, currentQuoteId }));
+  }, [quotes, currentQuoteId]);
 
-  const handleCreateQuote = () => {
-    const newQuote = createNewQuote();
-    setGlobalState(prev => ({
-      ...prev,
-      quotes: [newQuote, ...prev.quotes],
-      currentQuoteId: newQuote.id
-    }));
-  };
+  const currentQuote = useMemo(() => quotes.find(q => q.id === currentQuoteId), [quotes, currentQuoteId]);
 
-  const handleDuplicateQuote = (id: string) => {
-    const source = globalState.quotes.find(q => q.id === id);
-    if(source) {
-       const newQuote = {
-         ...source,
-         id: generateId(),
-         projectDetails: { ...source.projectDetails, projectName: `${source.projectDetails.projectName} (نسخة)`},
-         lastModified: Date.now()
-       };
-       setGlobalState(prev => ({
-         ...prev,
-         quotes: [newQuote, ...prev.quotes],
-         currentQuoteId: newQuote.id
-       }));
+  // Handle new quote creation
+  const handleCreateQuote = useCallback((type: QuoteType) => {
+    const constants = getConstantsForQuoteType(type);
+    const newQuote: SavedQuote = {
+      id: Date.now().toString(),
+      lastModified: Date.now(),
+      quoteType: type,
+      isPinned: false,
+      categories: constants.CATEGORIES,
+      selections: constants.DEFAULT_SELECTIONS,
+      projectDetails: {
+        employeeName: '',
+        customerName: '',
+        projectName: '',
+        date: new Date().toISOString().split('T')[0],
+        customerNumber: '',
+        areaSize: 100,
+        numberOfFloors: 1,
+        spaces: [],
+        basePricePerM2: constants.BASE_PRICE
+      },
+      standardSpecs: constants.DEFAULT_STANDARD_SPECS,
+      printSettings: {
+        showDetails: true,
+        showFooter: true,
+        notes: '',
+        showLogo: false
+      },
+      paymentSchedule: constants.DEFAULT_PAYMENT_SCHEDULE,
+      areaBreakdown: []
+    };
+    setQuotes(prev => [...prev, newQuote]);
+    setCurrentQuoteId(newQuote.id);
+  }, []);
+
+  // Update logic for the current quote
+  const updateCurrentQuote = useCallback((updates: Partial<SavedQuote>) => {
+    if (!currentQuoteId) return;
+    setQuotes(prev => prev.map(q => 
+      q.id === currentQuoteId 
+        ? { ...q, ...updates, lastModified: Date.now() } 
+        : q
+    ));
+  }, [currentQuoteId]);
+
+  const handleGoToWelcome = () => {
+    if (window.confirm('هل أنت متأكد من رغبتك في العودة إلى الشاشة الرئيسية؟ سيتم حفظ أي تغييرات ولكن ستحتاج إلى تحديد عرض سعر للمتابعة.')) {
+      setCurrentQuoteId(null);
     }
   };
 
-  const handleDeleteQuote = (id: string) => {
-    if (globalState.quotes.length <= 1) return;
-    if(!window.confirm('هل أنت متأكد من حذف هذا العرض؟')) return;
-
-    setGlobalState(prev => {
-      const newQuotes = prev.quotes.filter(q => q.id !== id);
-      const nextId = prev.currentQuoteId === id ? newQuotes[0].id : prev.currentQuoteId;
-      return { ...prev, quotes: newQuotes, currentQuoteId: nextId };
+  const handleSelection = useCallback((categoryId: string, newSelection: any) => {
+    if (!currentQuote) return;
+    updateCurrentQuote({
+      selections: { ...currentQuote.selections, [categoryId]: newSelection }
     });
-  };
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handleSelection = (categoryId: string, optionId: string) => {
-    updateCurrentQuote(q => {
-      const category = q.categories.find(c => c.id === categoryId);
-      const isMulti = category?.allowMultiple;
-      let newValue: string | string[];
-
-      if (isMulti) {
-        const current = q.selections[categoryId];
-        const currentArray = Array.isArray(current) ? current : (current ? [current] : []);
-        newValue = currentArray.includes(optionId) ? currentArray.filter(id => id !== optionId) : [...currentArray, optionId];
-      } else newValue = optionId;
-
-      return { ...q, selections: { ...q.selections, [categoryId]: newValue } };
+  const handleProjectDetailChange = useCallback((field: keyof ProjectDetails, value: any) => {
+    if (!currentQuote) return;
+    updateCurrentQuote({
+      projectDetails: { ...currentQuote.projectDetails, [field]: value }
     });
-  };
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handleProjectDetailsChange = (field: keyof ProjectDetails, value: any) => {
-    updateCurrentQuote(q => ({ ...q, projectDetails: { ...q.projectDetails, [field]: value } }));
-  };
+  const handleUpdateBreakdown = useCallback((breakdown: AreaRow[]) => {
+    updateCurrentQuote({ areaBreakdown: breakdown });
+  }, [updateCurrentQuote]);
 
-  const handleUpdateBreakdown = (breakdown: AreaRow[]) => {
-    updateCurrentQuote(q => ({ ...q, areaBreakdown: breakdown }));
-  };
+  const handleUpdateSpaces = useCallback((spaces: Space[]) => {
+    if (!currentQuote) return;
+    updateCurrentQuote({
+      projectDetails: { ...currentQuote.projectDetails, spaces }
+    });
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handlePrintSettingsChange = (settings: PrintSettingsType) => {
-    updateCurrentQuote(q => ({ ...q, printSettings: settings }));
-  };
+  const handleUpdateStandardSpecs = useCallback((id: string, newText: string) => {
+    if (!currentQuote) return;
+    updateCurrentQuote({
+      standardSpecs: currentQuote.standardSpecs.map(s => s.id === id ? { ...s, text: newText } : s)
+    });
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handlePaymentScheduleChange = (schedule: PaymentStage[]) => {
-      updateCurrentQuote(q => ({ ...q, paymentSchedule: schedule }));
-  };
+  const handleAddStandardSpec = useCallback((text: string) => {
+    if (!currentQuote) return;
+    const newSpec: StandardSpec = { id: Date.now().toString(), text };
+    updateCurrentQuote({
+      standardSpecs: [...currentQuote.standardSpecs, newSpec]
+    });
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handleStandardSpecAdd = (text: string) => {
-    updateCurrentQuote(q => ({ ...q, standardSpecs: [...q.standardSpecs, { id: generateId(), text }] }));
-  };
+  const handleDeleteStandardSpec = useCallback((id: string) => {
+    if (!currentQuote) return;
+    updateCurrentQuote({
+      standardSpecs: currentQuote.standardSpecs.filter(s => s.id !== id)
+    });
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handleStandardSpecDelete = (id: string) => {
-    updateCurrentQuote(q => ({ ...q, standardSpecs: q.standardSpecs.filter(s => s.id !== id) }));
-  };
-  
-  const handleStandardSpecUpdate = (id: string, text: string) => {
-      updateCurrentQuote(q => ({ ...q, standardSpecs: q.standardSpecs.map(s => s.id === id ? { ...s, text } : s) }));
-  };
+  const handleUpdatePaymentSchedule = useCallback((schedule: PaymentStage[]) => {
+    updateCurrentQuote({ paymentSchedule: schedule });
+  }, [updateCurrentQuote]);
 
-  const handleSaveCategory = (category: Category) => {
-    updateCurrentQuote(q => {
-      const exists = q.categories.find(c => c.id === category.id);
-      let newCategories = exists ? q.categories.map(c => c.id === category.id ? category : c) : [...q.categories, category];
-      let newSelections = { ...q.selections };
-      if (!exists && category.options.length > 0) {
-          newSelections[category.id] = category.allowMultiple ? [] : category.options[0].id;
-      }
-      return { ...q, categories: newCategories, selections: newSelections };
+  const handleSaveCategory = useCallback((category: Category) => {
+    if (!currentQuote) return;
+    const exists = currentQuote.categories.some(c => c.id === category.id);
+    let newCategories;
+    if (exists) {
+      newCategories = currentQuote.categories.map(c => c.id === category.id ? category : c);
+    } else {
+      newCategories = [...currentQuote.categories, category];
+    }
+    updateCurrentQuote({ categories: newCategories });
+    setIsEditorOpen(false);
+  }, [currentQuote, updateCurrentQuote]);
+
+  const handleDeleteCategory = useCallback((categoryId: string) => {
+    if (!currentQuote) return;
+    updateCurrentQuote({
+      categories: currentQuote.categories.filter(c => c.id !== categoryId)
     });
     setIsEditorOpen(false);
-  };
+  }, [currentQuote, updateCurrentQuote]);
 
-  const handleDeleteCategory = (categoryId: string) => {
-    updateCurrentQuote(q => {
-      const newSelections = { ...q.selections };
-      delete newSelections[categoryId];
-      return { ...q, categories: q.categories.filter(c => c.id !== categoryId), selections: newSelections };
-    });
-    setIsEditorOpen(false);
-  };
+  const handleDuplicateQuote = useCallback((id: string) => {
+    const quoteToDup = quotes.find(q => q.id === id);
+    if (!quoteToDup) return;
+    const newQuote: SavedQuote = {
+      ...quoteToDup,
+      id: Date.now().toString(),
+      lastModified: Date.now(),
+      projectDetails: { ...quoteToDup.projectDetails, projectName: `${quoteToDup.projectDetails.projectName} (نسخة)` }
+    };
+    setQuotes(prev => [...prev, newQuote]);
+  }, [quotes]);
+
+  const handleTogglePin = useCallback((id: string) => {
+    setQuotes(prev => prev.map(q => q.id === id ? { ...q, isPinned: !q.isPinned } : q));
+  }, []);
+
+  const handleRenameQuote = useCallback((id: string, newName: string) => {
+    setQuotes(prev => prev.map(q => q.id === id ? { ...q, projectDetails: { ...q.projectDetails, projectName: newName } } : q));
+  }, []);
+
+  const handleDeleteQuote = useCallback((id: string) => {
+    setQuotes(prev => prev.filter(q => q.id !== id));
+    if (currentQuoteId === id) setCurrentQuoteId(null);
+  }, [currentQuoteId]);
+
+  // Calculate financials
+  const quoteTotals = useMemo(() => {
+    if (!currentQuote) return null;
+    return calculateQuoteTotals(
+      currentQuote.categories,
+      currentQuote.selections,
+      currentQuote.projectDetails,
+      currentQuote.quoteType
+    );
+  }, [currentQuote]);
+
+  // Define tabs based on quote type
+  const TABS = useMemo(() => {
+    const commonTabs = [
+        { id: 'technical', label: 'المواصفات الفنية', icon: 'settings' },
+        { id: 'additions', label: 'الاضافات بسعر ثابت', icon: 'package' },
+    ];
+    if (currentQuote?.quoteType === 'structure') {
+        return [
+            ...commonTabs,
+            { id: 'standard', label: 'المواصفات الاساسية', icon: 'check' }
+        ];
+    }
+    return commonTabs;
+  }, [currentQuote?.quoteType]);
+
+  // Effect to reset active tab if it becomes invalid for the current quote type
+  useEffect(() => {
+    if (currentQuote?.quoteType === 'finishes' && activeTab === 'standard') {
+        setActiveTab('technical');
+    }
+  }, [currentQuote?.quoteType, activeTab]);
+
+  // If no quote is selected or found, show the type selector
+  if (!currentQuote) {
+    return <QuoteTypeSelector onSelect={handleCreateQuote} />;
+  }
 
   const technicalCategories = currentQuote.categories.filter(c => c.id !== 'fixed_additions');
-  const additionCategory = currentQuote.categories.find(c => c.id === 'fixed_additions');
+  const fixedAdditionsCategory = currentQuote.categories.find(c => c.id === 'fixed_additions');
 
   return (
-    <div className="min-h-screen pb-20 print:pb-0 bg-slate-50/50">
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 print:hidden shadow-sm">
-        <div className="max-w-[95rem] mx-auto px-8 sm:px-16 lg:px-24 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-             <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"><Icon name="menu" size={24} /></button>
-             <div className="flex items-center gap-2">
-                <div className="bg-primary-600 text-white p-1.5 rounded-lg"><Icon name="calculator" size={20} /></div>
-                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-500 hidden sm:block">معالم بغداد</h1>
-             </div>
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-900" dir="rtl">
+      {/* Top Navbar */}
+      <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50 print:hidden shadow-sm">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-600">
+            <Icon name="menu" size={24} />
+          </button>
+          <button onClick={handleGoToWelcome} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-600" title="العودة إلى الشاشة الرئيسية">
+            <Icon name="rotate-ccw" size={20} />
+          </button>
+          <div className="h-8 w-px bg-slate-200 mx-2"></div>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-black text-slate-800 leading-tight">معالم بغداد للمقاولات</h1>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{currentQuote.quoteType === 'structure' ? 'عرض بناء هيكل' : 'عرض إنهاءات'}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setIsPrintSettingsOpen(true)} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-slate-200 active:scale-95"><Icon name="printer" size={18} /><span>طباعة / PDF</span></button>
-          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+            <button 
+                onClick={() => setIsPrintSettingsOpen(true)}
+                className="bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95"
+            >
+                <Icon name="printer" size={18} />
+                طباعة العرض
+            </button>
+            <div className="h-8 w-px bg-slate-200 mx-2"></div>
+            <button 
+                onClick={() => downloadJSON(currentQuote, `Quote-${currentQuote.projectDetails.projectName || 'New'}`)}
+                className="p-2.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
+                title="تصدير JSON"
+            >
+                <Icon name="json" size={20} />
+            </button>
+            <button 
+                onClick={() => downloadCSV(currentQuote, quoteTotals?.finalPricePerM2 || 0, quoteTotals?.grandTotal || 0)}
+                className="p-2.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                title="تصدير CSV"
+            >
+                <Icon name="spreadsheet" size={20} />
+            </button>
         </div>
       </nav>
 
-      <main className="max-w-[95rem] mx-auto px-8 sm:px-16 lg:px-24 py-6 print:p-0">
-        
+      <main className="max-w-7xl mx-auto px-4 py-8 pb-24">
+        {/* Project Header Info */}
         <ProjectInfo 
-          details={currentQuote.projectDetails} 
-          onChange={handleProjectDetailsChange} 
-          onUpdateBreakdown={handleUpdateBreakdown}
-          savedBreakdown={currentQuote.areaBreakdown}
+            details={currentQuote.projectDetails}
+            quoteType={currentQuote.quoteType}
+            onChange={handleProjectDetailChange}
+            onUpdateBreakdown={handleUpdateBreakdown}
+            onUpdateSpaces={handleUpdateSpaces}
+            savedBreakdown={currentQuote.areaBreakdown}
         />
 
-        <div className="mb-8 print:hidden">
-            <div className="flex flex-col sm:flex-row p-1 bg-white border border-slate-200 rounded-xl mb-6 shadow-sm">
-              {['technical', 'additions', 'standard'].map((t) => (
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-2 mb-8 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm print:hidden">
+            {TABS.map(tab => (
                 <button
-                  key={t}
-                  onClick={() => setActiveTab(t as TabType)}
-                  className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === t ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`
+                        flex items-center gap-2 flex-1 justify-center py-3 px-4 rounded-xl font-bold text-sm transition-all
+                        ${activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
+                    `}
                 >
-                  <Icon name={t === 'technical' ? 'settings' : t === 'additions' ? 'package' : 'check'} size={16} />
-                  {t === 'technical' ? 'المواصفات الفنية' : t === 'additions' ? 'إضافات مقطوعة' : 'المواصفات الأساسية'}
+                    <Icon name={tab.icon} size={18} />
+                    {tab.label}
                 </button>
-              ))}
-            </div>
-
-            <div className="animate-in fade-in duration-300">
-                {activeTab === 'technical' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {technicalCategories.map((category) => (
-                      <OptionSelector key={category.id} category={category} selectedOptionId={currentQuote.selections[category.id]} onSelect={handleSelection} onEdit={() => { setEditingCategory(category); setIsEditorOpen(true); }} />
-                      ))}
-                      <button onClick={() => { setEditingCategory(null); setIsEditorOpen(true); }} className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50/30 transition-all min-h-[200px]"><Icon name="plus" size={32} className="text-slate-300 mb-2" /><span className="font-bold text-slate-500">إضافة مواصفة جديدة</span></button>
-                  </div>
-                )}
-                {activeTab === 'additions' && additionCategory && (
-                   <FixedAdditionsTable category={additionCategory} selectedIds={Array.isArray(currentQuote.selections[additionCategory.id]) ? (currentQuote.selections[additionCategory.id] as string[]) : []} onSelect={handleSelection} onEditCategory={(c) => { setEditingCategory(c); setIsEditorOpen(true); }} onUpdateCategory={handleSaveCategory} />
-                )}
-                {activeTab === 'standard' && <StandardSpecs specs={currentQuote.standardSpecs} onAdd={handleStandardSpecAdd} onDelete={handleStandardSpecDelete} onUpdate={handleStandardSpecUpdate} />}
-            </div>
+            ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:block">
-          <PriceBreakdown categories={currentQuote.categories} selections={currentQuote.selections} areaSize={currentQuote.projectDetails.areaSize} showIndividualPrices={currentQuote.printSettings.showDetails} />
-          <PaymentSchedule schedule={currentQuote.paymentSchedule || DEFAULT_PAYMENT_SCHEDULE} totalAmount={grandTotal} onChange={handlePaymentScheduleChange} />
+        {/* Tab Content Rendering */}
+        <div className="mb-8 min-h-[300px]">
+            {activeTab === 'technical' && (
+                <div className="animate-in fade-in duration-500">
+                    <TechnicalSpecsTable
+                        categories={technicalCategories}
+                        selections={currentQuote.selections}
+                        onSelect={handleSelection}
+                        onEditCategory={(cat) => { setEditingCategory(cat); setIsEditorOpen(true); }}
+                        onNewCategory={() => { setEditingCategory(null); setIsEditorOpen(true); }}
+                        projectDetails={currentQuote.projectDetails}
+                        quoteType={currentQuote.quoteType}
+                    />
+                </div>
+            )}
+            
+            {activeTab === 'additions' && fixedAdditionsCategory && (
+                <div className="animate-in fade-in duration-500">
+                    <FixedAdditionsTable 
+                        category={fixedAdditionsCategory}
+                        selectedIds={(currentQuote.selections.fixed_additions as string[]) || []}
+                        onSelect={(catId, optId) => {
+                            const current = (currentQuote.selections.fixed_additions as string[]) || [];
+                            const next = current.includes(optId) ? current.filter(id => id !== optId) : [...current, optId];
+                            handleSelection(catId, next);
+                        }}
+                        onEditCategory={(cat) => { setEditingCategory(cat); setIsEditorOpen(true); }}
+                        onUpdateCategory={(cat) => {
+                            const nextCats = currentQuote.categories.map(c => c.id === cat.id ? cat : c);
+                            updateCurrentQuote({ categories: nextCats });
+                        }}
+                    />
+                </div>
+            )}
+
+            {activeTab === 'standard' && (
+                <div className="animate-in fade-in duration-500">
+                    <StandardSpecs 
+                        specs={currentQuote.standardSpecs}
+                        onAdd={handleAddStandardSpec}
+                        onDelete={handleDeleteStandardSpec}
+                        onUpdate={handleUpdateStandardSpecs}
+                    />
+                </div>
+            )}
         </div>
+        
+        {/* Financial Section */}
+        {quoteTotals && (
+             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div className="lg:col-span-2">
+                    <PriceBreakdown 
+                        categories={currentQuote.categories}
+                        selections={currentQuote.selections}
+                        projectDetails={currentQuote.projectDetails}
+                        showIndividualPrices={currentQuote.printSettings.showDetails}
+                        quoteTotals={quoteTotals}
+                        quoteType={currentQuote.quoteType}
+                        onBasePriceChange={(val) => handleProjectDetailChange('basePricePerM2', val)}
+                    />
+                </div>
+                <div className="lg:col-span-3">
+                     <PaymentSchedule 
+                        schedule={currentQuote.paymentSchedule || []}
+                        totalAmount={quoteTotals.grandTotal}
+                        onChange={handleUpdatePaymentSchedule}
+                    />
+                </div>
+            </div>
+        )}
       </main>
 
-      <QuoteSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} quotes={globalState.quotes} currentQuoteId={globalState.currentQuoteId} onSelectQuote={(id) => setGlobalState(prev => ({ ...prev, currentQuoteId: id }))} onNewQuote={handleCreateQuote} onDeleteQuote={handleDeleteQuote} onDuplicateQuote={handleDuplicateQuote} />
-      <CategoryEditor isOpen={isEditorOpen} category={editingCategory} onClose={() => setIsEditorOpen(false)} onSave={handleSaveCategory} onLiveUpdate={() => {}} onDelete={handleDeleteCategory} />
-      <PrintSettings isOpen={isPrintSettingsOpen} onClose={() => setIsPrintSettingsOpen(false)} settings={currentQuote.printSettings} onChange={handlePrintSettingsChange} />
+      {/* Sidebar for Quote Management */}
+      <QuoteSidebar 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        quotes={quotes}
+        currentQuoteId={currentQuoteId}
+        onSelectQuote={(id) => setCurrentQuoteId(id)}
+        onNewQuote={() => setCurrentQuoteId(null)}
+        onDeleteQuote={handleDeleteQuote}
+        onDuplicateQuote={handleDuplicateQuote}
+        onTogglePin={handleTogglePin}
+        onRenameQuote={handleRenameQuote}
+      />
+
+      {/* Print Settings Modal */}
+      <PrintSettings 
+        isOpen={isPrintSettingsOpen}
+        onClose={() => setIsPrintSettingsOpen(false)}
+        settings={currentQuote.printSettings}
+        onChange={(settings) => updateCurrentQuote({ printSettings: settings })}
+      />
+
+      {/* Category Editor Modal */}
+      <CategoryEditor 
+        category={editingCategory}
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        onSave={handleSaveCategory}
+        onLiveUpdate={() => {}} 
+        onDelete={handleDeleteCategory}
+      />
     </div>
   );
 };

@@ -1,5 +1,7 @@
+
 import { SavedQuote, Category } from '../types';
-import { BASE_PRICE } from '../constants';
+// FIX: Import getConstantsForQuoteType to dynamically get BASE_PRICE
+import { getConstantsForQuoteType } from '../constants';
 
 export const downloadJSON = (data: object, filename: string) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -14,6 +16,10 @@ export const downloadJSON = (data: object, filename: string) => {
 };
 
 export const downloadCSV = (quote: SavedQuote, totalUnitPrice: number, totalPrice: number) => {
+  // FIX: Get constants based on the quote type to find the correct BASE_PRICE
+  const constants = getConstantsForQuoteType(quote.quoteType);
+  const { BASE_PRICE } = constants;
+
   // UTF-8 BOM for Excel Arabic support
   const BOM = "\uFEFF"; 
   let csvContent = BOM;

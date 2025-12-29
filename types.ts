@@ -1,4 +1,6 @@
 
+export type QuoteType = 'structure' | 'finishes';
+
 export type CostType = 'per_m2' | 'fixed' | 'percentage';
 
 export interface Option {
@@ -6,20 +8,29 @@ export interface Option {
   label: string;
   cost: number;
   costType?: CostType; 
-  // Added for profitability analysis to fix error in ProfitabilityPanel
-  actualCost?: number;
 }
 
 export interface Category {
   id: string;
   title: string;
-  iconName: 'brick' | 'droplet' | 'ruler' | 'settings' | 'layers' | 'paint' | 'zap' | 'package';
+  iconName: 'brick' | 'droplet' | 'ruler' | 'settings' | 'layers' | 'paint' | 'zap' | 'package' | 'blinds' | 'lightbulb' | 'bath' | 'sofa' | 'window';
   options: Option[];
   allowMultiple?: boolean; 
 }
 
+export interface CategorySelection {
+  default: string; // default option id
+  overrides: Record<string, string>; // { [spaceId]: optionId }
+}
+
 export interface SelectionState {
-  [categoryId: string]: string | string[]; 
+  [categoryId: string]: CategorySelection | string[]; // string[] for multi-select categories
+}
+
+export interface Space {
+  id: string;
+  name: string;
+  weight: number;
 }
 
 export interface ProjectDetails {
@@ -29,6 +40,9 @@ export interface ProjectDetails {
   date: string;
   customerNumber: string;
   areaSize: number; 
+  numberOfFloors: number;
+  spaces?: Space[];
+  basePricePerM2?: number;
 }
 
 export interface StandardSpec {
@@ -64,6 +78,8 @@ export interface AreaRow {
 export interface SavedQuote {
   id: string;
   lastModified: number;
+  quoteType: QuoteType;
+  isPinned?: boolean;
   categories: Category[];
   selections: SelectionState;
   projectDetails: ProjectDetails;

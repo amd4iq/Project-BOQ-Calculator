@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PaymentStage } from '../types';
 import { formatCurrency } from '../utils/format';
@@ -8,43 +9,6 @@ interface PaymentScheduleProps {
   totalAmount: number;
   onChange: (schedule: PaymentStage[]) => void;
 }
-
-interface PresetItem {
-    name: string;
-    percentage: number;
-}
-
-interface Preset {
-    label: string;
-    items: PresetItem[];
-}
-
-const PRESETS: Preset[] = [
-  { 
-      label: 'قياسي (30-40-30)', 
-      items: [
-          { name: 'الدفعة الأولى (مقدم العقد)', percentage: 30 },
-          { name: 'الدفعة الثانية (إكمال الهيكل)', percentage: 40 },
-          { name: 'الدفعة الثالثة (عند التسليم)', percentage: 30 }
-      ]
-  },
-  { 
-      label: 'دفعتين (50-50)', 
-      items: [
-          { name: 'الدفعة الأولى (مقدم)', percentage: 50 },
-          { name: 'الدفعة الثانية (عند التسليم)', percentage: 50 }
-      ]
-  },
-  { 
-      label: '4 دفعات متساوية', 
-      items: [
-          { name: 'الدفعة الأولى', percentage: 25 },
-          { name: 'الدفعة الثانية', percentage: 25 },
-          { name: 'الدفعة الثالثة', percentage: 25 },
-          { name: 'الدفعة الرابعة', percentage: 25 }
-      ]
-  },
-];
 
 export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, totalAmount, onChange }) => {
   const totalPercentage = schedule.reduce((sum, item) => sum + item.percentage, 0);
@@ -77,17 +41,6 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
     onChange(schedule.filter(s => s.id !== id));
   };
 
-  const applyPreset = (items: PresetItem[]) => {
-      if(!window.confirm('سيتم استبدال الجدول الحالي. هل أنت متأكد؟')) return;
-      
-      const newSchedule = items.map((item, idx) => ({
-          id: `pay-preset-${Date.now()}-${idx}`,
-          name: item.name,
-          percentage: item.percentage
-      }));
-      onChange(newSchedule);
-  };
-
   const handleAutoFix = () => {
       if (schedule.length === 0) return;
       
@@ -111,7 +64,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col print:border print:border-black print:rounded-none">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col print:border-none print:shadow-none print:rounded-none">
       
       {/* Visual Progress Bar (Screen Only) */}
       <div className="h-3 w-full flex print:hidden bg-slate-100 border-b border-slate-100">
@@ -136,7 +89,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
       </div>
 
       {/* Header */}
-      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between print:bg-slate-100 print:border-black print:p-2">
+      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-2">
             <div className="bg-white p-2 rounded-lg shadow-sm text-primary-600 print:hidden border border-slate-200">
                 <Icon name="briefcase" size={20} />
@@ -166,19 +119,10 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
             )}
         </div>
       </div>
-
-      {/* Quick Presets (Screen Only) */}
-      <div className="px-6 py-3 border-b border-slate-100 flex flex-wrap gap-2 print:hidden bg-slate-50/50">
-          <span className="text-xs font-bold text-slate-400 py-1.5 ml-1">نماذج سريعة:</span>
-          {PRESETS.map((preset) => (
-              <button
-                key={preset.label}
-                onClick={() => applyPreset(preset.items)}
-                className="text-xs bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 hover:border-slate-300 px-3 py-1.5 rounded-lg transition-all font-medium shadow-sm active:scale-95"
-              >
-                  {preset.label}
-              </button>
-          ))}
+      
+      {/* Print Header */}
+      <div className="hidden print:block">
+          <h3 className="print-title-bar mt-6">جدول الدفعات المالية</h3>
       </div>
 
       <div className="p-6 print:p-0 flex-1 flex flex-col">
@@ -186,9 +130,9 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
             <table className="w-full text-sm print-table border-collapse">
                 <thead>
                     <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 print:bg-slate-100 print:border-black print:text-black">
-                        <th className="text-right py-3 px-4 font-extrabold w-[45%] border-r border-slate-200 print:border print:border-black">المرحلة / وصف الدفعة</th>
+                        <th className="text-right py-3 px-4 font-extrabold w-[55%] border-r border-slate-200 print:border print:border-black">المرحلة / وصف الدفعة</th>
                         <th className="text-center py-3 px-4 font-extrabold w-[20%] border-r border-slate-200 print:border print:border-black">النسبة (%)</th>
-                        <th className="text-left py-3 px-4 font-extrabold w-[30%] print:border print:border-black">القيمة المالية</th>
+                        <th className="text-left py-3 px-4 font-extrabold w-[25%] print:border print:border-black">القيمة المالية</th>
                         <th className="w-[5%] print:hidden bg-slate-50"></th>
                     </tr>
                 </thead>
@@ -226,7 +170,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                                     </div>
                                 </td>
                                 <td className="p-2 text-left font-mono font-bold text-slate-800 print:border print:border-black print:text-black align-middle">
-                                    <div className="px-3 py-1.5 rounded bg-slate-50 border border-slate-100 print:bg-transparent print:border-none print:p-0">
+                                    <div className="px-3 py-1.5 print:px-2 print:py-1 rounded bg-slate-50 border border-slate-100 print:bg-transparent print:border-none print:p-0">
                                         {formatCurrency(amount)}
                                     </div>
                                 </td>
@@ -251,7 +195,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                         <td className={`py-4 px-4 text-center font-black border-r border-slate-200 print:border print:border-black bg-slate-50 print:bg-slate-100 font-mono text-lg ${!isTotalValid ? 'text-red-600' : 'text-emerald-600'}`}>
                             {totalPercentage.toFixed(0)}%
                         </td>
-                        <td className="py-4 px-4 text-left font-black text-lg text-slate-900 print:border print:border-black bg-slate-50 print:bg-slate-100">
+                        <td className="py-4 px-4 text-left font-black text-lg print:text-[10pt] text-slate-900 print:border print:border-black bg-slate-50 print:bg-slate-100">
                             {formatCurrency(totalAmount)}
                         </td>
                         <td className="print:hidden bg-slate-50"></td>

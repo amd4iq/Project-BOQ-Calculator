@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   BrickWall, 
@@ -30,13 +31,22 @@ import {
   ImagePlus,
   User,
   Phone,
+  Building,
   Building2,
   Briefcase,
   Circle,
   Square,
   CheckSquare,
   Triangle,
-  Minus
+  Minus,
+  Pin,
+  Blinds,
+  Lightbulb,
+  Bath,
+  Sofa,
+  DoorOpen,
+  Check,
+  Search
 } from 'lucide-react';
 
 interface IconProps {
@@ -53,6 +63,7 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'calculator': return <Calculator className={className} size={size} />;
     case 'chevron': return <ChevronDown className={className} size={size} />;
     case 'check': return <CheckCircle2 className={className} size={size} />;
+    case 'check-simple': return <Check className={className} size={size} />;
     case 'settings': return <Settings className={className} size={size} />;
     case 'layers': return <Layers className={className} size={size} />;
     case 'plus': return <Plus className={className} size={size} />;
@@ -79,10 +90,20 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'user': return <User className={className} size={size} />;
     case 'phone': return <Phone className={className} size={size} />;
     case 'building': return <Building2 className={className} size={size} />;
+    case 'building-floors': return <Building className={className} size={size} />;
     case 'briefcase': return <Briefcase className={className} size={size} />;
     case 'triangle': return <Triangle className={className} size={size} />;
+    case 'pin': return <Pin className={className} size={size} />;
+    case 'search': return <Search className={className} size={size} />;
     
-    // New Selection Icons
+    // Finishes Icons
+    case 'blinds': return <Blinds className={className} size={size} />;
+    case 'lightbulb': return <Lightbulb className={className} size={size} />;
+    case 'bath': return <Bath className={className} size={size} />;
+    case 'sofa': return <Sofa className={className} size={size} />;
+    case 'window': return <DoorOpen className={className} size={size} />; // Using DoorOpen for window as a placeholder
+
+    // Selection Icons
     case 'circle': return <Circle className={className} size={size} />;
     case 'square': return <Square className={className} size={size} />;
     case 'check-square': return <CheckSquare className={className} size={size} />;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Category, SelectionState } from '../types';
+import { Category, SelectionState, CategorySelection } from '../types';
 import { Icon } from './Icons';
 
 interface QualityIndicatorProps {
@@ -13,17 +13,20 @@ export const QualityIndicator: React.FC<QualityIndicatorProps> = ({ categories, 
     let score = 0;
 
     // 1. Brick Type
-    const brickSelection = selections['brick'];
-    if (brickSelection === 'brick-red') score += 2;
+    // FIX: Access the 'default' property on the selection object, as 'brick' is a single-select category.
+    const brickSelection = selections['brick'] as CategorySelection;
+    if (brickSelection?.default === 'brick-red') score += 2;
 
     // 2. Ceiling Height
-    const heightSelection = selections['height'];
-    if (heightSelection === 'h-35') score += 2;
-    if (heightSelection === 'h-36') score += 3;
+    // FIX: Access the 'default' property on the selection object and correct the option IDs which had typos.
+    const heightSelection = selections['height'] as CategorySelection;
+    if (heightSelection?.default === 'h-33-35') score += 2;
+    if (heightSelection?.default === 'h-36-40') score += 3;
 
     // 3. Cleaning Slab
-    const cleaningSelection = selections['cleaning'];
-    if (cleaningSelection === 'clean-with') score += 1;
+    // FIX: Access the 'default' property on the selection object.
+    const cleaningSelection = selections['cleaning'] as CategorySelection;
+    if (cleaningSelection?.default === 'clean-with') score += 1;
 
     // 4. Additions
     const additions = selections['fixed_additions'];

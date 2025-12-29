@@ -1,24 +1,165 @@
-import React, { useState } from 'react';
-import { ProjectDetails, AreaRow } from '../types';
+
+import React, { useState, useMemo } from 'react';
+import { ProjectDetails, AreaRow, QuoteType, Space } from '../types';
 import { Icon } from './Icons';
 import { AreaCalculator } from './AreaCalculator';
 
+interface ProjectSpacesProps {
+  spaces: Space[];
+  onUpdate: (spaces: Space[]) => void;
+  totalArea: number;
+}
+
+const ProjectSpaces: React.FC<ProjectSpacesProps> = ({ spaces, onUpdate, totalArea }) => {
+  const [newSpaceName, setNewSpaceName] = useState('');
+
+  const handleAddSpace = () => {
+    if (!newSpaceName.trim()) return;
+    const newSpace: Space = {
+      id: Date.now().toString(),
+      name: newSpaceName.trim(),
+      weight: 0,
+    };
+    onUpdate([...spaces, newSpace]);
+    setNewSpaceName('');
+  };
+
+  const handleUpdateSpace = (id: string, field: 'name' | 'weight', value: any) => {
+    const updated = spaces.map(s => {
+      if (s.id === id) {
+        const newValue = field === 'weight' ? Math.max(0, Math.min(100, Number(value))) : value;
+        return { ...s, [field]: newValue };
+      }
+      return s;
+    });
+    onUpdate(updated);
+  };
+
+  const handleRemoveSpace = (id: string) => {
+    onUpdate(spaces.filter(s => s.id !== id));
+  };
+
+  const totalWeight = useMemo(() => spaces.reduce((sum, s) => sum + (s.weight || 0), 0), [spaces]);
+  const isWeightValid = Math.abs(totalWeight - 100) < 0.1;
+
+  return (
+    <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+      <div className="mb-4">
+        <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <Icon name="sofa" size={18} className="text-primary-600" />
+            تخصيص المواصفات حسب الفضاء
+        </h4>
+        <p className="text-xs text-slate-500 mt-1 pr-1">
+          أضف الفضاءات وحدد وزنها النسبي من المساحة الكلية (يجب ان يكون المجموع 100%).
+        </p>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-1 text-xs">
+            <span className="font-bold text-slate-500">الوزن النسبي الإجمالي</span>
+            <span className={`font-bold ${isWeightValid ? 'text-emerald-600' : 'text-rose-500'}`}>
+                {totalWeight.toFixed(1)}% / 100%
+            </span>
+        </div>
+        <div className="w-full bg-slate-200 rounded-full h-2.5 relative overflow-hidden">
+            <div 
+                className={`h-full rounded-full transition-all duration-300 ${isWeightValid ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                style={{ width: `${Math.min(totalWeight, 100)}%` }}
+            ></div>
+        </div>
+        {!isWeightValid && (
+            <p className="text-xs text-center text-rose-500 mt-2">
+                يجب أن يكون مجموع الأوزان 100% لتفعيل التخصيص بشكل صحيح.
+            </p>
+        )}
+      </div>
+      
+      <div className="space-y-3 mb-4">
+        {spaces.map(space => {
+            const calculatedArea = (space.weight / 100) * totalArea;
+            return (
+              <div key={space.id} className="grid grid-cols-12 items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="col-span-12 sm:col-span-5 flex items-center gap-2">
+                    <Icon name="sofa" size={16} className="text-slate-400" />
+                    <input 
+                        type="text"
+                        value={space.name}
+                        onChange={e => handleUpdateSpace(space.id, 'name', e.target.value)}
+                        className="font-bold text-sm text-slate-900 bg-transparent flex-1 outline-none p-1 focus:bg-slate-50 rounded"
+                        placeholder="اسم الفضاء (مثال: غرفة نوم)"
+                    />
+                </div>
+                <div className="col-span-4 sm:col-span-3">
+                    <div className="flex items-center bg-slate-100 border border-slate-200 rounded-md p-1 focus-within:ring-1 ring-primary-300 w-full">
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={space.weight || ''}
+                            onChange={(e) => handleUpdateSpace(space.id, 'weight', e.target.value)}
+                            className="w-full bg-transparent text-center font-bold text-sm text-slate-800 outline-none px-2"
+                            placeholder="0"
+                        />
+                        <span className="text-xs font-bold text-slate-400 pr-2">%</span>
+                    </div>
+                </div>
+                <div className="col-span-4 sm:col-span-3">
+                    <div className="flex items-center justify-center bg-slate-50 border border-slate-200 rounded-md p-1 h-[40px] text-center">
+                        <span className="font-bold text-sm text-slate-700">{calculatedArea.toFixed(1)}</span>
+                        <span className="text-xs font-bold text-slate-400 ml-1">م²</span>
+                    </div>
+                </div>
+                <div className="col-span-4 sm:col-span-1 text-right sm:text-center">
+                    <button onClick={() => handleRemoveSpace(space.id)} className="p-1.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-full">
+                      <Icon name="x" size={16} />
+                    </button>
+                </div>
+              </div>
+            );
+        })}
+        {spaces.length === 0 && <p className="text-xs text-center text-slate-500 p-4">لم يتم إضافة أي فضاء. أضف الغرف والحمامات لتخصيص الإنهاءات.</p>}
+      </div>
+
+       <div className="grid grid-cols-12 items-center gap-3 p-2 bg-white rounded-xl border-2 border-dashed border-slate-200 shadow-sm focus-within:border-primary-300 focus-within:border-solid">
+         <div className="col-span-12 sm:col-span-8 flex items-center gap-2 pl-2">
+            <Icon name="sofa" size={16} className="text-slate-400" />
+            <input 
+                type="text"
+                value={newSpaceName}
+                onChange={e => setNewSpaceName(e.target.value)}
+                placeholder="اسم الفضاء الجديد..."
+                className="flex-grow bg-transparent outline-none px-2 text-sm font-semibold"
+            />
+         </div>
+         <div className="col-span-12 sm:col-span-4">
+            <button onClick={handleAddSpace} className="w-full bg-primary-600 text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-primary-700 flex items-center justify-center gap-2 transition-all active:scale-95">
+                <Icon name="plus" size={16}/>
+                إضافة فضاء
+            </button>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+
 interface ProjectInfoProps {
   details: ProjectDetails;
+  quoteType: QuoteType;
   onChange: (field: keyof ProjectDetails, value: any) => void;
   onUpdateBreakdown: (breakdown: AreaRow[]) => void;
+  onUpdateSpaces: (spaces: Space[]) => void;
   savedBreakdown?: AreaRow[];
 }
 
-export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, onChange, onUpdateBreakdown, savedBreakdown }) => {
+export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, onChange, onUpdateBreakdown, onUpdateSpaces, savedBreakdown }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   return (
     <>
-      {/* SCREEN VIEW */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-8 print:hidden overflow-hidden transition-all duration-300 hover:shadow-md">
-        {/* Header / Toggle */}
         <div 
             className="flex items-center justify-between p-4 bg-slate-50 border-b border-slate-100 cursor-pointer select-none group"
             onClick={() => setIsExpanded(!isExpanded)}
@@ -45,7 +186,6 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, onChange, onU
             </div>
         </div>
 
-        {/* Collapsible Content */}
         {isExpanded && (
             <div className="p-6 animate-in slide-in-from-top-2 duration-200">
                 <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -54,8 +194,8 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, onChange, onU
                             <Icon name="ruler" size={24} />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-blue-900 mb-1">مساحة البناء الإجمالية</label>
-                            <p className="text-xs text-blue-600 opacity-80">يتم احتساب التكلفة بناءً على هذه المساحة</p>
+                            <label className="block text-sm font-bold text-blue-900 mb-1">المعايير الأساسية</label>
+                            <p className="text-xs text-blue-600 opacity-80">يتم احتساب التكلفة بناءً على المساحة وعدد الطوابق</p>
                         </div>
                      </div>
                      <div className="flex items-center gap-2">
@@ -77,6 +217,18 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, onChange, onU
                                 placeholder="0"
                             />
                             <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold text-sm select-none">م²</span>
+                         </div>
+                         <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-blue-200 shadow-sm w-full sm:w-auto focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400 transition-all">
+                            <Icon name="building-floors" size={16} className="text-slate-400 ml-2" />
+                            <input
+                                type="number"
+                                min="1"
+                                value={details.numberOfFloors}
+                                onChange={(e) => onChange('numberOfFloors', Number(e.target.value))}
+                                className="w-full sm:w-16 text-center text-2xl font-black text-slate-800 outline-none bg-transparent"
+                                placeholder="1"
+                            />
+                            <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold text-sm select-none">طابق</span>
                          </div>
                      </div>
                 </div>
@@ -131,37 +283,15 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, onChange, onU
                         </div>
                     </div>
                 </div>
+                {quoteType === 'finishes' && (
+                    <ProjectSpaces 
+                        spaces={details.spaces || []} 
+                        onUpdate={onUpdateSpaces}
+                        totalArea={details.areaSize}
+                    />
+                )}
             </div>
         )}
-      </div>
-
-      <div className="hidden print:block mb-4">
-        <div className="print-box grid grid-cols-2">
-            <div className="p-1.5 border-b border-l border-black">
-                <span className="block text-[8px] text-slate-500 font-bold mb-0.5">اسم المشروع / العنوان</span>
-                <span className="block font-bold text-black text-xs">{details.projectName || '----------------'}</span>
-            </div>
-            <div className="p-1.5 border-b border-black">
-                <span className="block text-[8px] text-slate-500 font-bold mb-0.5">المساحة (م²)</span>
-                <span className="block font-bold text-black text-xs">{details.areaSize} م²</span>
-            </div>
-            <div className="p-1.5 border-b border-l border-black">
-                <span className="block text-[8px] text-slate-500 font-bold mb-0.5">اسم الزبون</span>
-                <span className="block font-bold text-black text-xs">{details.customerName || '----------------'}</span>
-            </div>
-            <div className="p-1.5 border-b border-black">
-                <span className="block text-[8px] text-slate-500 font-bold mb-0.5">رقم الهاتف</span>
-                <span className="block font-bold text-black text-xs font-mono">{details.customerNumber || '----------------'}</span>
-            </div>
-            <div className="p-1.5 border-l border-black">
-                <span className="block text-[8px] text-slate-500 font-bold mb-0.5">الموظف المسؤول</span>
-                <span className="block font-bold text-black text-xs">{details.employeeName || '----------------'}</span>
-            </div>
-            <div className="p-1.5">
-                <span className="block text-[8px] text-slate-500 font-bold mb-0.5">التاريخ</span>
-                <span className="block font-bold text-black text-xs font-mono">{details.date}</span>
-            </div>
-        </div>
       </div>
       
       <AreaCalculator 
