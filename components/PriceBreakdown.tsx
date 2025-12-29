@@ -22,6 +22,58 @@ interface PriceBreakdownProps {
   onBasePriceChange: (newPrice: number) => void;
 }
 
+const BudgetTracker: React.FC<{ details: ProjectDetails, total: number }> = ({ details, total }) => {
+  if (!details.enableBudgeting || !details.targetBudget || details.targetBudget <= 0) {
+    return null;
+  }
+
+  const { targetBudget } = details;
+  const percentage = (total / targetBudget) * 100;
+  const remaining = targetBudget - total;
+
+  let barColor = 'bg-emerald-500';
+  let textColor = 'text-emerald-700';
+  if (percentage > 90) {
+    barColor = 'bg-amber-500';
+    textColor = 'text-amber-700';
+  }
+  if (percentage > 100) {
+    barColor = 'bg-rose-500';
+    textColor = 'text-rose-700';
+  }
+
+  return (
+    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+      <div className="flex justify-between items-center text-xs mb-2">
+        <span className="font-bold text-slate-500 flex items-center gap-1.5">
+          <Icon name="pie-chart" size={14} />
+          متابعة الميزانية
+        </span>
+        <span className="font-bold text-slate-700 font-mono">{formatCurrency(total)} / <span className="text-slate-500">{formatCurrency(targetBudget)}</span></span>
+      </div>
+      <div className="w-full bg-slate-200 rounded-full h-2.5 relative overflow-hidden">
+        <div 
+            className={`h-full rounded-full transition-all duration-500 ${barColor}`} 
+            style={{ width: `${Math.min(percentage, 100)}%` }}>
+        </div>
+        {percentage > 100 && (
+            <div 
+                className="absolute inset-0 h-full rounded-full bg-rose-500/30" 
+                style={{ width: `${Math.min(percentage, 200) - 100}%`, left: '100%' }}>
+            </div>
+        )}
+      </div>
+      <p className={`text-xs text-center font-bold mt-2 ${textColor}`}>
+        {remaining >= 0 ? 
+          `المتبقي: ${formatCurrency(remaining)}` :
+          `تجاوز الميزانية: ${formatCurrency(Math.abs(remaining))}`
+        }
+      </p>
+    </div>
+  );
+}
+
+
 export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({ 
   categories, 
   selections, 
@@ -167,6 +219,8 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
         
         <div className="p-6 print:p-0">
             <div className="print:hidden space-y-6">
+                <BudgetTracker details={projectDetails} total={grandTotal} />
+
                 <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-4">
                     <BasePriceComponent />
                     <div className="border-t border-slate-200 border-dashed my-2"></div>

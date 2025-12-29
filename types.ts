@@ -43,6 +43,9 @@ export interface ProjectDetails {
   numberOfFloors: number;
   spaces?: Space[];
   basePricePerM2?: number;
+  targetBudget?: number;
+  enableBudgeting?: boolean;
+  activeLevels?: string[];
 }
 
 export interface StandardSpec {
@@ -64,19 +67,19 @@ export interface PaymentStage {
   percentage: number;
 }
 
-export type AreaShape = 'rectangle' | 'triangle' | 'circle' | 'trapezoid';
+export type AreaShape = 'full' | 'half' | 'third';
 
 export interface AreaRow {
   id: string;
   label: string;
   shape: AreaShape;
-  dim1: number; // Length / Base / Radius / Base 1
-  dim2: number; // Width / Height / Base 2
-  dim3: number; // Height (for trapezoid)
+  dim1: number; // For 'full' & 'half': Area (m²). For 'third': Length (m).
+  dim2: number; // Unused
+  dim3: number; // Unused
 }
 
 export interface SavedQuote {
-  id: string;
+  id:string;
   lastModified: number;
   quoteType: QuoteType;
   isPinned?: boolean;
@@ -89,7 +92,14 @@ export interface SavedQuote {
   areaBreakdown?: AreaRow[];
 }
 
+export interface QuoteTemplate {
+  id: string;
+  name: string;
+  selections: SelectionState;
+}
+
 export interface GlobalState {
   quotes: SavedQuote[];
   currentQuoteId: string;
+  templates?: QuoteTemplate[];
 }

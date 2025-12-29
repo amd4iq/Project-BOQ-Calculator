@@ -1,7 +1,7 @@
 
 import { Category, StandardSpec, PaymentStage, SelectionState } from '../types';
 
-export const BASE_PRICE = 500000;
+export const BASE_PRICE = 280000;
 
 export const CATEGORIES: Category[] = [
   {

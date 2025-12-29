@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Category, CategorySelection, ProjectDetails, SelectionState, Space, QuoteType } from '../types';
 import { Icon } from './Icons';
@@ -27,32 +26,33 @@ export const SpecCard: React.FC<SpecCardProps> = ({
     ? selection 
     : { default: category.options[0]?.id, overrides: {} };
 
-  const spaces = projectDetails.spaces || [];
   const baselineOption = category.options[0];
   if (!baselineOption) return null;
   
   const baselineCost = baselineOption.cost;
   const showCustomization = quoteType === 'finishes';
+  
+  const activeCustomLevels = (projectDetails.activeLevels || []).map(levelId => {
+      const levelNumber = parseInt(levelId.split('-')[1]);
+      return { id: levelId, name: `المستوى ${levelNumber}` };
+  });
 
   const handleDefaultChange = (optionId: string) => {
     onSelect(category.id, { ...currentSelection, default: optionId });
   };
   
-  const handleOverrideChange = (spaceId: string, optionId: string) => {
+  const handleOverrideChange = (levelId: string, optionId: string) => {
     const newOverrides = { ...currentSelection.overrides };
     if (optionId === currentSelection.default) {
-      delete newOverrides[spaceId];
+      delete newOverrides[levelId];
     } else {
-      newOverrides[spaceId] = optionId;
+      newOverrides[levelId] = optionId;
     }
     onSelect(category.id, { ...currentSelection, overrides: newOverrides });
   };
 
   const selectedOptionLabel = category.options.find(o => o.id === currentSelection.default)?.label || 'N/A';
   const hasOverrides = showCustomization && Object.keys(currentSelection.overrides).length > 0;
-  
-  const totalWeight = spaces.reduce((acc, space) => acc + (space.weight || 0), 0);
-  const isWeightValid = Math.abs(totalWeight - 100) < 0.1;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full animate-in fade-in zoom-in-95 duration-300">
@@ -62,7 +62,7 @@ export const SpecCard: React.FC<SpecCardProps> = ({
           <div>
             <h4 className="font-bold text-slate-800">{category.title}</h4>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              {hasOverrides && isWeightValid ? <span className="text-amber-600 font-bold">مخصص حسب الفضاء</span> : selectedOptionLabel}
+              {hasOverrides ? <span className="text-amber-600 font-bold">مخصص حسب المستوى</span> : selectedOptionLabel}
             </p>
           </div>
         </div>
@@ -72,9 +72,11 @@ export const SpecCard: React.FC<SpecCardProps> = ({
       <div className="p-5 space-y-3 flex-1">
         {(!isCustomizing || !showCustomization) ? (
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400">الاختيار العام (لكامل المشروع)</label>
             {category.options.map(opt => {
               const costDiff = opt.cost - baselineCost;
+              const costType = opt.costType || 'per_m2';
+              const costTypeLabel = costType === 'per_m2' ? '/ م2' : '';
+
               return (
                 <div key={opt.id} onClick={() => handleDefaultChange(opt.id)} className={`flex justify-between items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${currentSelection.default === opt.id ? 'border-primary-500 bg-primary-50' : 'border-transparent bg-slate-50 hover:bg-slate-100'}`}>
                   <label className="font-bold text-sm text-slate-800">{opt.label}</label>
@@ -83,7 +85,7 @@ export const SpecCard: React.FC<SpecCardProps> = ({
                   ) : (
                     <span className="text-sm font-mono font-bold text-slate-600">
                         +{formatCurrency(costDiff)}
-                        <span className="text-xs text-slate-400"> /م²</span>
+                        <span className="text-xs text-slate-400"> {costTypeLabel}</span>
                     </span>
                   )}
                 </div>
@@ -92,13 +94,13 @@ export const SpecCard: React.FC<SpecCardProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-             <p className="text-xs text-slate-500 bg-amber-50 border border-amber-100 p-2 rounded-lg">أنت في وضع التخصيص. سيتم حساب التكلفة بناءً على الوزن النسبي لكل فضاء.</p>
-            {(spaces.length > 0 && isWeightValid) ? spaces.map(space => (
-                <div key={space.id} className="flex items-center justify-between gap-2 p-2 bg-slate-50/70 rounded-md">
-                    <label className="text-sm font-bold text-slate-700 truncate flex-1">{space.name} <span className="text-xs font-normal text-slate-400">({space.weight}%)</span></label>
+             <p className="text-xs text-slate-500 bg-amber-50 border border-amber-100 p-2 rounded-lg">أنت في وضع التخصيص. سيتم تطبيق المواصفات التالية على المستويات المحددة فقط.</p>
+            {activeCustomLevels.length > 0 ? activeCustomLevels.map(level => (
+                <div key={level.id} className="flex items-center justify-between gap-2 p-2 bg-slate-50/70 rounded-md">
+                    <label className="text-sm font-bold text-slate-700 truncate flex-1">{level.name}</label>
                     <select
-                        value={currentSelection.overrides[space.id] || currentSelection.default}
-                        onChange={(e) => handleOverrideChange(space.id, e.target.value)}
+                        value={currentSelection.overrides[level.id] || currentSelection.default}
+                        onChange={(e) => handleOverrideChange(level.id, e.target.value)}
                         className="bg-white border border-slate-200 rounded-md px-2 py-1 text-xs font-bold w-40"
                     >
                         {category.options.map(opt => (
@@ -108,7 +110,7 @@ export const SpecCard: React.FC<SpecCardProps> = ({
                         <option value="__EXCLUDE__">استثناء (لا ينطبق)</option>
                     </select>
                 </div>
-            )) : <p className="text-xs text-center text-rose-500 p-4 bg-rose-50 rounded-lg border border-rose-100">يرجى إضافة فضاءات والتأكد من أن مجموع أوزانها 100% لتتمكن من التخصيص.</p>}
+            )) : <p className="text-xs text-center text-rose-500 p-4 bg-rose-50 rounded-lg border border-rose-100">يرجى تفعيل المستويات المطلوب تخصيصها من قسم "بيانات المشروع" أولاً.</p>}
           </div>
         )}
       </div>
@@ -117,7 +119,7 @@ export const SpecCard: React.FC<SpecCardProps> = ({
           <div className="p-3 bg-slate-50/50 border-t border-slate-100">
             <button onClick={() => setIsCustomizing(!isCustomizing)} className="w-full text-xs font-bold text-center p-2 rounded-lg flex items-center justify-center gap-2 transition-colors bg-white hover:bg-slate-100 border border-slate-200 text-slate-600">
                 <Icon name={isCustomizing ? 'settings' : 'sofa'} size={14} />
-                {isCustomizing ? 'العودة للاختيار العام' : 'تخصيص حسب الفضاء'}
+                {isCustomizing ? 'العودة للاختيار العام' : 'تخصيص حسب المستوى'}
             </button>
           </div>
       )}

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Icon } from './Icons';
 import { AreaRow, AreaShape } from '../types';
 
@@ -10,14 +11,69 @@ interface AreaCalculatorProps {
   savedBreakdown?: AreaRow[];
 }
 
-const QUICK_LABELS = ['الطابق الأرضي', 'الطابق الأول', 'السطح', 'المنور', 'الكراج', 'الحديقة'];
-
-const SHAPES: { value: AreaShape; label: string; icon: string }[] = [
-  { value: 'rectangle', label: 'مستطيل', icon: 'square' },
-  { value: 'triangle', label: 'مثلث', icon: 'triangle' },
-  { value: 'circle', label: 'دائرة', icon: 'circle' },
-  { value: 'trapezoid', label: 'شبه منحرف', icon: 'layers' },
-];
+const AreaSection: React.FC<{
+    title: string;
+    description: string;
+    unit: 'م²' | 'م';
+    rows: AreaRow[];
+    onAdd: () => void;
+    onUpdate: (id: string, field: keyof AreaRow, value: any) => void;
+    onRemove: (id: string) => void;
+    calculateRowValue: (row: AreaRow) => number;
+}> = ({ title, description, unit, rows, onAdd, onUpdate, onRemove, calculateRowValue }) => {
+    const subtotal = rows.reduce((sum, row) => sum + calculateRowValue(row), 0);
+    
+    return (
+        <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200">
+            <div className="flex justify-between items-center mb-3">
+                <div>
+                    <h3 className="font-bold text-slate-800">{title}</h3>
+                    <p className="text-xs text-slate-500">{description}</p>
+                </div>
+                 <span className="font-black text-slate-700 text-lg bg-white px-3 py-1 rounded-lg border border-slate-100 shadow-sm">{subtotal.toFixed(1)} <small className="text-xs text-slate-400 font-normal">م²</small></span>
+            </div>
+            <div className="space-y-2">
+                {rows.map(row => (
+                    <div key={row.id} className="grid grid-cols-12 gap-2 items-center group">
+                        <input
+                            type="text"
+                            value={row.label}
+                            onChange={(e) => onUpdate(row.id, 'label', e.target.value)}
+                            placeholder="الوصف (مثال: سقف الأرضي)"
+                            className="col-span-6 w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 font-medium focus:border-primary-400 outline-none transition-all text-sm"
+                        />
+                        <div className="col-span-5 relative">
+                           <input
+                            type="number"
+                            step="0.1"
+                            value={row.dim1 || ''}
+                            onChange={(e) => onUpdate(row.id, 'dim1', parseFloat(e.target.value) || 0)}
+                            className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-2 py-2 text-center text-sm font-bold outline-none"
+                            placeholder="القيمة"
+                           />
+                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">{unit}</span>
+                        </div>
+                        <div className="col-span-1 text-center">
+                            <button
+                                onClick={() => onRemove(row.id)}
+                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                            >
+                                <Icon name="trash" size={16} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <button
+                onClick={onAdd}
+                className="mt-3 w-full text-xs font-bold text-slate-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
+                <Icon name="plus" size={14}/>
+                إضافة بند
+            </button>
+        </div>
+    );
+};
 
 export const AreaCalculator: React.FC<AreaCalculatorProps> = ({ 
   isOpen, 
@@ -27,29 +83,34 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
   savedBreakdown
 }) => {
   const [rows, setRows] = useState<AreaRow[]>([]);
-  const lastInputRef = useRef<HTMLInputElement>(null);
 
+  const getInitialRows = () => [
+      { id: 'full-1', label: 'سقف الطابق الأرضي', shape: 'full' as AreaShape, dim1: 170, dim2: 0, dim3: 0 },
+      { id: 'full-2', label: 'سقف الطابق الأول', shape: 'full' as AreaShape, dim1: 170, dim2: 0, dim3: 0 },
+      { id: 'half-1', label: 'الكراج', shape: 'half' as AreaShape, dim1: 30, dim2: 0, dim3: 0 },
+      { id: 'half-2', label: 'البيتونة', shape: 'half' as AreaShape, dim1: 30, dim2: 0, dim3: 0 },
+      { id: 'third-1', label: 'السياج الخارجي', shape: 'third' as AreaShape, dim1: 54, dim2: 0, dim3: 0 },
+  ];
+  
   useEffect(() => {
     if (isOpen) {
       if (savedBreakdown && savedBreakdown.length > 0) {
         setRows(savedBreakdown);
       } else {
-        setRows([{ id: '1', label: 'الطابق الأرضي', shape: 'rectangle', dim1: 0, dim2: 0, dim3: 0 }]);
+        setRows(getInitialRows());
       }
     }
   }, [isOpen, savedBreakdown]);
 
-  const handleAddRow = () => {
+  const handleAddRow = (shape: AreaShape) => {
     setRows([
       ...rows, 
-      { id: Date.now().toString(), label: '', shape: 'rectangle', dim1: 0, dim2: 0, dim3: 0 }
+      { id: Date.now().toString(), label: '', shape, dim1: 0, dim2: 0, dim3: 0 }
     ]);
   };
 
   const handleRemoveRow = (id: string) => {
-    if (rows.length > 1) {
-      setRows(rows.filter(r => r.id !== id));
-    }
+    setRows(rows.filter(r => r.id !== id));
   };
 
   const handleUpdateRow = (id: string, field: keyof AreaRow, value: any) => {
@@ -58,10 +119,9 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
 
   const calculateRowArea = (row: AreaRow): number => {
     switch (row.shape) {
-      case 'rectangle': return row.dim1 * row.dim2;
-      case 'triangle': return 0.5 * row.dim1 * row.dim2;
-      case 'circle': return Math.PI * Math.pow(row.dim1, 2);
-      case 'trapezoid': return 0.5 * (row.dim1 + row.dim2) * row.dim3;
+      case 'full': return row.dim1;
+      case 'half': return row.dim1 / 2;
+      case 'third': return row.dim1 / 3;
       default: return 0;
     }
   };
@@ -75,10 +135,14 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
   };
 
   if (!isOpen) return null;
+  
+  const fullAreaRows = rows.filter(r => r.shape === 'full');
+  const halfAreaRows = rows.filter(r => r.shape === 'half');
+  const thirdLengthRows = rows.filter(r => r.shape === 'third');
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] border border-white/20">
+      <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] border border-white/20">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl">
@@ -87,8 +151,8 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
               <Icon name="calculator" size={22} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800">حاسبة المساحة الهندسية</h2>
-              <p className="text-sm text-slate-500">حساب المساحات المعقدة (مستطيل، مثلث، دائرة)</p>
+              <h2 className="text-xl font-bold text-slate-800">حاسبة ذرعة البناء</h2>
+              <p className="text-sm text-slate-500">حساب المساحة الإجمالية وفقاً لقواعد الذرعة المعتمدة</p>
             </div>
           </div>
           <button 
@@ -100,123 +164,37 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
-          <div className="mb-6">
-              <span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">تسميات سريعة</span>
-              <div className="flex flex-wrap gap-2">
-                  {QUICK_LABELS.map(label => (
-                      <button 
-                        key={label}
-                        onClick={() => {
-                            const emptyRow = rows.find(r => !r.label);
-                            if (emptyRow) handleUpdateRow(emptyRow.id, 'label', label);
-                            else setRows([...rows, { id: Date.now().toString(), label, shape: 'rectangle', dim1: 0, dim2: 0, dim3: 0 }]);
-                        }}
-                        className="text-xs bg-slate-100 hover:bg-primary-50 hover:text-primary-700 text-slate-600 px-3 py-1.5 rounded-full border border-slate-200 transition-all font-bold"
-                      >
-                          {label}
-                      </button>
-                  ))}
-              </div>
-          </div>
-
-          <div className="space-y-4">
-            {rows.map((row, idx) => (
-              <div key={row.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-primary-200 transition-all group">
-                <div className="grid grid-cols-12 gap-3 items-center">
-                  
-                  {/* Shape & Label */}
-                  <div className="col-span-12 md:col-span-4 space-y-2">
-                    <input
-                      type="text"
-                      value={row.label}
-                      onChange={(e) => handleUpdateRow(row.id, 'label', e.target.value)}
-                      placeholder="اسم الجزء (مثلاً: الصالة)"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-800 font-bold focus:border-primary-400 outline-none transition-all text-sm"
-                    />
-                    <div className="flex gap-1 p-1 bg-slate-200/50 rounded-lg">
-                      {SHAPES.map(s => (
-                        <button
-                          key={s.value}
-                          onClick={() => handleUpdateRow(row.id, 'shape', s.value)}
-                          className={`flex-1 flex flex-col items-center gap-1 py-1 rounded-md text-[10px] font-bold transition-all ${row.shape === s.value ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                          <Icon name={s.icon} size={14} />
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dimensions */}
-                  <div className="col-span-12 md:col-span-6 grid grid-cols-3 gap-2">
-                    {row.shape === 'rectangle' && (
-                      <>
-                        <div className="relative">
-                          <input type="number" step="0.1" value={row.dim1 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim1', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-center text-sm font-bold outline-none" placeholder="الطول" />
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">م</span>
-                        </div>
-                        <div className="flex items-center justify-center text-slate-300">×</div>
-                        <div className="relative">
-                          <input type="number" step="0.1" value={row.dim2 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim2', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-center text-sm font-bold outline-none" placeholder="العرض" />
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300">م</span>
-                        </div>
-                      </>
-                    )}
-                    {row.shape === 'triangle' && (
-                      <>
-                        <div className="relative">
-                          <input type="number" step="0.1" value={row.dim1 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim1', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-center text-sm font-bold outline-none" placeholder="القاعدة" />
-                        </div>
-                        <div className="flex items-center justify-center text-slate-300">× الارتفاع / 2</div>
-                        <div className="relative">
-                          <input type="number" step="0.1" value={row.dim2 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim2', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-center text-sm font-bold outline-none" placeholder="الارتفاع" />
-                        </div>
-                      </>
-                    )}
-                    {row.shape === 'circle' && (
-                      <div className="col-span-3 flex items-center gap-3">
-                        <div className="relative flex-1">
-                          <input type="number" step="0.1" value={row.dim1 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim1', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-center text-sm font-bold outline-none" placeholder="نصف القطر" />
-                          <label className="absolute -top-4 right-1 text-[9px] text-slate-400 font-bold uppercase">نصف القطر (r)</label>
-                        </div>
-                        <div className="text-xs text-slate-400 font-bold">المساحة = π × r²</div>
-                      </div>
-                    )}
-                    {row.shape === 'trapezoid' && (
-                      <>
-                        <input type="number" step="0.1" value={row.dim1 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim1', parseFloat(e.target.value) || 0)} className="bg-white border border-slate-200 rounded-xl px-1 py-2 text-center text-[11px] font-bold outline-none" placeholder="قاعدة 1" />
-                        <input type="number" step="0.1" value={row.dim2 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim2', parseFloat(e.target.value) || 0)} className="bg-white border border-slate-200 rounded-xl px-1 py-2 text-center text-[11px] font-bold outline-none" placeholder="قاعدة 2" />
-                        <input type="number" step="0.1" value={row.dim3 || ''} onChange={(e) => handleUpdateRow(row.id, 'dim3', parseFloat(e.target.value) || 0)} className="bg-white border border-slate-200 rounded-xl px-1 py-2 text-center text-[11px] font-bold outline-none" placeholder="الارتفاع" />
-                      </>
-                    )}
-                  </div>
-
-                  {/* Row Total & Delete */}
-                  <div className="col-span-12 md:col-span-2 flex items-center justify-between md:justify-end gap-3">
-                    <span className="font-black text-slate-700 text-sm">{calculateRowArea(row).toFixed(1)} <small className="text-[10px] text-slate-400 font-normal">م²</small></span>
-                    <button
-                        onClick={() => handleRemoveRow(row.id)}
-                        disabled={rows.length === 1}
-                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all md:opacity-0 md:group-hover:opacity-100 disabled:hidden"
-                    >
-                        <Icon name="trash" size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={handleAddRow}
-            className="mt-6 flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all group"
-          >
-            <div className="bg-slate-100 group-hover:bg-primary-100 p-1 rounded-full transition-colors">
-                <Icon name="plus" size={16} />
-            </div>
-            إضافة شكل هندسي جديد
-          </button>
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white space-y-4">
+          <AreaSection
+            title="السقوف والمساحات الكاملة"
+            description="القاعدة: يتم احتساب مساحة السقوف والدرج بالكامل."
+            unit="م²"
+            rows={fullAreaRows}
+            onAdd={() => handleAddRow('full')}
+            onUpdate={handleUpdateRow}
+            onRemove={handleRemoveRow}
+            calculateRowValue={(r) => r.dim1}
+          />
+          <AreaSection
+            title="المناور والكراجات والمماشي"
+            description="القاعدة: يتم احتساب نصف مساحة هذه البنود."
+            unit="م²"
+            rows={halfAreaRows}
+            onAdd={() => handleAddRow('half')}
+            onUpdate={handleUpdateRow}
+            onRemove={handleRemoveRow}
+            calculateRowValue={(r) => r.dim1 / 2}
+          />
+          <AreaSection
+            title="الستائر والأسيجة الخارجية"
+            description="القاعدة: يتم احتساب ثلث الطول الخطي لهذه البنود."
+            unit="م"
+            rows={thirdLengthRows}
+            onAdd={() => handleAddRow('third')}
+            onUpdate={handleUpdateRow}
+            onRemove={handleRemoveRow}
+            calculateRowValue={(r) => r.dim1 / 3}
+          />
         </div>
 
         {/* Footer */}
@@ -224,15 +202,9 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-6">
                 <div className="text-right">
-                    <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest">المجموع النهائي</span>
+                    <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest">ذرعة البناء النهائية</span>
                     <span className="block text-2xl font-black text-primary-700">{totalArea.toFixed(1)} م²</span>
                 </div>
-                {diff !== 0 && (
-                    <div className={`px-2 py-1 rounded-lg text-[10px] font-black flex items-center gap-1 ${diff > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                        {diff > 0 ? '+' : ''}{diff.toFixed(1)}
-                        <Icon name={diff > 0 ? 'plus' : 'minus'} size={10} />
-                    </div>
-                )}
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">

@@ -1,6 +1,5 @@
 
-import { SavedQuote, Category } from '../types';
-// FIX: Import getConstantsForQuoteType to dynamically get BASE_PRICE
+import { SavedQuote, Category, CategorySelection } from '../types';
 import { getConstantsForQuoteType } from '../constants';
 
 export const downloadJSON = (data: object, filename: string) => {
@@ -16,7 +15,6 @@ export const downloadJSON = (data: object, filename: string) => {
 };
 
 export const downloadCSV = (quote: SavedQuote, totalUnitPrice: number, totalPrice: number) => {
-  // FIX: Get constants based on the quote type to find the correct BASE_PRICE
   const constants = getConstantsForQuoteType(quote.quoteType);
   const { BASE_PRICE } = constants;
 
@@ -39,14 +37,24 @@ export const downloadCSV = (quote: SavedQuote, totalUnitPrice: number, totalPric
   // Categories
   quote.categories.forEach(cat => {
     const selection = quote.selections[cat.id];
-    const selectedIds = Array.isArray(selection) ? selection : (selection ? [selection] : []);
-
-    selectedIds.forEach(id => {
+    
+    if (cat.allowMultiple) {
+      const selectedIds = (selection as string[]) || [];
+      selectedIds.forEach(id => {
         const option = cat.options.find(o => o.id === id);
         if (option) {
-            csvContent += `${cat.title},${option.label},${option.cost}\n`;
+          csvContent += `"${cat.title}","${option.label}",${option.cost}\n`;
         }
-    });
+      });
+    } else {
+      const catSelection = selection as CategorySelection;
+      if (catSelection && catSelection.default) {
+        const option = cat.options.find(o => o.id === catSelection.default);
+        if (option) {
+            csvContent += `"${cat.title}","${option.label}",${option.cost}\n`;
+        }
+      }
+    }
   });
 
   csvContent += `\n`;

@@ -1,143 +1,101 @@
-
 import React, { useState, useMemo } from 'react';
 import { ProjectDetails, AreaRow, QuoteType, Space } from '../types';
 import { Icon } from './Icons';
 import { AreaCalculator } from './AreaCalculator';
+import { formatCurrency } from '../utils/format';
 
-interface ProjectSpacesProps {
-  spaces: Space[];
-  onUpdate: (spaces: Space[]) => void;
-  totalArea: number;
-}
+const LevelSelector: React.FC<{
+  activeLevels: string[];
+  onChange: (activeLevels: string[]) => void;
+}> = ({ activeLevels, onChange }) => {
+  const allLevels = Array.from({ length: 10 }, (_, i) => ({
+    id: `level-${i + 1}`,
+    value: i + 1,
+  }));
 
-const ProjectSpaces: React.FC<ProjectSpacesProps> = ({ spaces, onUpdate, totalArea }) => {
-  const [newSpaceName, setNewSpaceName] = useState('');
+  const totalPercentage = useMemo(() => {
+    return activeLevels.reduce((sum, levelId) => {
+      const levelValue = parseInt(levelId.split('-')[1]);
+      return sum + (levelValue * 10);
+    }, 0);
+  }, [activeLevels]);
 
-  const handleAddSpace = () => {
-    if (!newSpaceName.trim()) return;
-    const newSpace: Space = {
-      id: Date.now().toString(),
-      name: newSpaceName.trim(),
-      weight: 0,
-    };
-    onUpdate([...spaces, newSpace]);
-    setNewSpaceName('');
+  const handleToggleLevel = (levelId: string, levelValue: number) => {
+    const isCurrentlyActive = activeLevels.includes(levelId);
+    if (!isCurrentlyActive && (totalPercentage + (levelValue * 10) > 100)) {
+        // Prevent adding if it exceeds 100%
+        return;
+    }
+
+    const newLevels = isCurrentlyActive
+      ? activeLevels.filter(l => l !== levelId)
+      : [...activeLevels, levelId];
+    
+    onChange(newLevels.sort((a, b) => parseInt(a.split('-')[1]) - parseInt(b.split('-')[1])));
   };
-
-  const handleUpdateSpace = (id: string, field: 'name' | 'weight', value: any) => {
-    const updated = spaces.map(s => {
-      if (s.id === id) {
-        const newValue = field === 'weight' ? Math.max(0, Math.min(100, Number(value))) : value;
-        return { ...s, [field]: newValue };
-      }
-      return s;
-    });
-    onUpdate(updated);
-  };
-
-  const handleRemoveSpace = (id: string) => {
-    onUpdate(spaces.filter(s => s.id !== id));
-  };
-
-  const totalWeight = useMemo(() => spaces.reduce((sum, s) => sum + (s.weight || 0), 0), [spaces]);
-  const isWeightValid = Math.abs(totalWeight - 100) < 0.1;
 
   return (
     <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200">
-      <div className="mb-4">
-        <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Icon name="sofa" size={18} className="text-primary-600" />
-            تخصيص المواصفات حسب الفضاء
-        </h4>
-        <p className="text-xs text-slate-500 mt-1 pr-1">
-          أضف الفضاءات وحدد وزنها النسبي من المساحة الكلية (يجب ان يكون المجموع 100%).
-        </p>
-      </div>
+      <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+        <Icon name="sofa" size={18} className="text-primary-600" />
+        توزيع نسب المشروع
+      </h4>
+      <p className="text-xs text-slate-500 mt-1 pr-1">
+        حدد المستويات لتقسيم المشروع. رقم المستوى يمثل نسبته المئوية (مثال: المستوى 3 = 30%). يجب أن لا يتجاوز المجموع 100%.
+      </p>
 
-      <div className="mb-6">
+       <div className="my-4">
         <div className="flex justify-between items-center mb-1 text-xs">
-            <span className="font-bold text-slate-500">الوزن النسبي الإجمالي</span>
-            <span className={`font-bold ${isWeightValid ? 'text-emerald-600' : 'text-rose-500'}`}>
-                {totalWeight.toFixed(1)}% / 100%
+            <span className="font-bold text-slate-500">النسبة المئوية الموزعة</span>
+            <span className={`font-bold ${totalPercentage > 100 ? 'text-rose-500' : 'text-emerald-600'}`}>
+                {totalPercentage}% / 100%
             </span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-2.5 relative overflow-hidden">
             <div 
-                className={`h-full rounded-full transition-all duration-300 ${isWeightValid ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                style={{ width: `${Math.min(totalWeight, 100)}%` }}
+                className={`h-full rounded-full transition-all duration-300 ${totalPercentage > 100 ? 'bg-rose-500' : 'bg-primary-500'}`}
+                style={{ width: `${Math.min(totalPercentage, 100)}%` }}
             ></div>
         </div>
-        {!isWeightValid && (
-            <p className="text-xs text-center text-rose-500 mt-2">
-                يجب أن يكون مجموع الأوزان 100% لتفعيل التخصيص بشكل صحيح.
+        {totalPercentage > 100 && (
+            <p className="text-xs text-center text-rose-500 mt-2 font-bold">
+                المجموع يتجاوز 100%. يرجى تعديل الاختيارات.
             </p>
         )}
       </div>
-      
-      <div className="space-y-3 mb-4">
-        {spaces.map(space => {
-            const calculatedArea = (space.weight / 100) * totalArea;
-            return (
-              <div key={space.id} className="grid grid-cols-12 items-center gap-3 p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
-                <div className="col-span-12 sm:col-span-5 flex items-center gap-2">
-                    <Icon name="sofa" size={16} className="text-slate-400" />
-                    <input 
-                        type="text"
-                        value={space.name}
-                        onChange={e => handleUpdateSpace(space.id, 'name', e.target.value)}
-                        className="font-bold text-sm text-slate-900 bg-transparent flex-1 outline-none p-1 focus:bg-slate-50 rounded"
-                        placeholder="اسم الفضاء (مثال: غرفة نوم)"
-                    />
-                </div>
-                <div className="col-span-4 sm:col-span-3">
-                    <div className="flex items-center bg-slate-100 border border-slate-200 rounded-md p-1 focus-within:ring-1 ring-primary-300 w-full">
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={space.weight || ''}
-                            onChange={(e) => handleUpdateSpace(space.id, 'weight', e.target.value)}
-                            className="w-full bg-transparent text-center font-bold text-sm text-slate-800 outline-none px-2"
-                            placeholder="0"
-                        />
-                        <span className="text-xs font-bold text-slate-400 pr-2">%</span>
-                    </div>
-                </div>
-                <div className="col-span-4 sm:col-span-3">
-                    <div className="flex items-center justify-center bg-slate-50 border border-slate-200 rounded-md p-1 h-[40px] text-center">
-                        <span className="font-bold text-sm text-slate-700">{calculatedArea.toFixed(1)}</span>
-                        <span className="text-xs font-bold text-slate-400 ml-1">م²</span>
-                    </div>
-                </div>
-                <div className="col-span-4 sm:col-span-1 text-right sm:text-center">
-                    <button onClick={() => handleRemoveSpace(space.id)} className="p-1.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-full">
-                      <Icon name="x" size={16} />
-                    </button>
-                </div>
-              </div>
-            );
-        })}
-        {spaces.length === 0 && <p className="text-xs text-center text-slate-500 p-4">لم يتم إضافة أي فضاء. أضف الغرف والحمامات لتخصيص الإنهاءات.</p>}
-      </div>
 
-       <div className="grid grid-cols-12 items-center gap-3 p-2 bg-white rounded-xl border-2 border-dashed border-slate-200 shadow-sm focus-within:border-primary-300 focus-within:border-solid">
-         <div className="col-span-12 sm:col-span-8 flex items-center gap-2 pl-2">
-            <Icon name="sofa" size={16} className="text-slate-400" />
-            <input 
-                type="text"
-                value={newSpaceName}
-                onChange={e => setNewSpaceName(e.target.value)}
-                placeholder="اسم الفضاء الجديد..."
-                className="flex-grow bg-transparent outline-none px-2 text-sm font-semibold"
-            />
-         </div>
-         <div className="col-span-12 sm:col-span-4">
-            <button onClick={handleAddSpace} className="w-full bg-primary-600 text-white font-bold px-4 py-2 rounded-md text-sm hover:bg-primary-700 flex items-center justify-center gap-2 transition-all active:scale-95">
-                <Icon name="plus" size={16}/>
-                إضافة فضاء
-            </button>
-         </div>
+      <div className="mt-4 grid grid-cols-5 sm:grid-cols-10 gap-3">
+        {allLevels.map(({ id, value }) => {
+          const isChecked = activeLevels.includes(id);
+          const isDisabled = !isChecked && (totalPercentage + (value * 10) > 100);
+
+          return (
+            <div key={id}>
+              <input
+                type="checkbox"
+                id={id}
+                checked={isChecked}
+                onChange={() => handleToggleLevel(id, value)}
+                disabled={isDisabled}
+                className="hidden peer"
+              />
+              <label
+                htmlFor={id}
+                className={`
+                  block p-3 text-center rounded-xl border-2 transition-all duration-200
+                  ${isDisabled 
+                    ? 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed' 
+                    : `cursor-pointer bg-white border-slate-200 text-slate-500 hover:border-slate-400 
+                       peer-checked:bg-primary-50 peer-checked:border-primary-500 peer-checked:text-primary-700 peer-checked:shadow-sm`
+                  }
+                `}
+              >
+                <span className="font-black text-lg sm:text-xl">{value}</span>
+                <span className="block text-xs font-bold mt-1">مستوى</span>
+              </label>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -151,9 +109,10 @@ interface ProjectInfoProps {
   onUpdateBreakdown: (breakdown: AreaRow[]) => void;
   onUpdateSpaces: (spaces: Space[]) => void;
   savedBreakdown?: AreaRow[];
+  quoteTotals: any;
 }
 
-export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, onChange, onUpdateBreakdown, onUpdateSpaces, savedBreakdown }) => {
+export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, onChange, onUpdateBreakdown, onUpdateSpaces, savedBreakdown, quoteTotals }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
@@ -283,11 +242,58 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                         </div>
                     </div>
                 </div>
+                
+                {/* Enhanced Budgeting Tool */}
+                <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${details.enableBudgeting ? 'bg-primary-50/50 border-primary-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                        <Icon name="pie-chart" size={18} className="text-primary-600" />
+                        أداة الميزانية
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        قارن التكلفة الإجمالية مع ميزانية الزبون المستهدفة.
+                      </p>
+                    </div>
+                    <label htmlFor="enableBudgeting" className="flex items-center cursor-pointer">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id="enableBudgeting"
+                          className="sr-only peer"
+                          checked={!!details.enableBudgeting}
+                          onChange={(e) => onChange('enableBudgeting', e.target.checked)}
+                        />
+                        <div className="block bg-slate-300 peer-checked:bg-primary-600 w-12 h-7 rounded-full transition-colors"></div>
+                        <div className="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
+                      </div>
+                    </label>
+                  </div>
+
+                  {details.enableBudgeting && (
+                    <div className="mt-4 pt-4 border-t border-primary-100 animate-in fade-in duration-500">
+                      <label className="text-sm font-bold text-slate-600 mb-2 block">
+                        الميزانية المستهدفة (IQD)
+                      </label>
+                      <div className="relative">
+                        <Icon name="calculator" size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="number"
+                          value={details.targetBudget || ''}
+                          onChange={(e) => onChange('targetBudget', Number(e.target.value))}
+                          className="w-full pr-10 pl-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all placeholder:text-slate-400"
+                          placeholder="ادخل ميزانية الزبون"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+
                 {quoteType === 'finishes' && (
-                    <ProjectSpaces 
-                        spaces={details.spaces || []} 
-                        onUpdate={onUpdateSpaces}
-                        totalArea={details.areaSize}
+                    <LevelSelector 
+                        activeLevels={details.activeLevels || []}
+                        onChange={(newLevels) => onChange('activeLevels', newLevels)}
                     />
                 )}
             </div>

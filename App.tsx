@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   QuoteType, 
@@ -10,7 +9,8 @@ import {
   Space, 
   StandardSpec, 
   PrintSettings as PrintSettingsType,
-  PaymentStage 
+  PaymentStage,
+  QuoteTemplate
 } from './types';
 import { getConstantsForQuoteType } from './constants';
 import { calculateQuoteTotals } from './utils/calculations';
@@ -27,6 +27,7 @@ import { FixedAdditionsTable } from './components/FixedAdditionsTable';
 import { StandardSpecs } from './components/StandardSpecs';
 import { PrintSettings } from './components/PrintSettings';
 import { CategoryEditor } from './components/CategoryEditor';
+import { TemplateManager } from './components/TemplateManager';
 import { Icon } from './components/Icons';
 
 const LOCAL_STORAGE_KEY = 'construction_quotes_v1';
@@ -40,10 +41,12 @@ const App: React.FC = () => {
   const [quotes, setQuotes] = useState<SavedQuote[]>([]);
   const [currentQuoteId, setCurrentQuoteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'technical' | 'additions' | 'standard'>('technical');
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPrintSettingsOpen, setIsPrintSettingsOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   // Load quotes from localStorage on initial mount
@@ -54,22 +57,25 @@ const App: React.FC = () => {
         const parsed = JSON.parse(saved);
         if (parsed.quotes) setQuotes(parsed.quotes);
         if (parsed.currentQuoteId) setCurrentQuoteId(parsed.currentQuoteId);
+        if (parsed.templates) setTemplates(parsed.templates);
       } catch (e) {
         console.error("Failed to parse saved quotes", e);
       }
     }
   }, []);
 
-  // Persist quotes to localStorage whenever they change
+  // Persist data to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ quotes, currentQuoteId }));
-  }, [quotes, currentQuoteId]);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ quotes, currentQuoteId, templates }));
+  }, [quotes, currentQuoteId, templates]);
 
   const currentQuote = useMemo(() => quotes.find(q => q.id === currentQuoteId), [quotes, currentQuoteId]);
 
   // Handle new quote creation
   const handleCreateQuote = useCallback((type: QuoteType) => {
     const constants = getConstantsForQuoteType(type);
+    const isFinishes = type === 'finishes';
+
     const newQuote: SavedQuote = {
       id: Date.now().toString(),
       lastModified: Date.now(),
@@ -83,10 +89,13 @@ const App: React.FC = () => {
         projectName: '',
         date: new Date().toISOString().split('T')[0],
         customerNumber: '',
-        areaSize: 100,
+        areaSize: 1,
         numberOfFloors: 1,
-        spaces: [],
-        basePricePerM2: constants.BASE_PRICE
+        spaces: [], // Simplified: calculation logic now derives spaces from levels
+        basePricePerM2: constants.BASE_PRICE,
+        enableBudgeting: false,
+        targetBudget: 0,
+        activeLevels: isFinishes ? [] : undefined,
       },
       standardSpecs: constants.DEFAULT_STANDARD_SPECS,
       printSettings: {
@@ -215,6 +224,29 @@ const App: React.FC = () => {
     if (currentQuoteId === id) setCurrentQuoteId(null);
   }, [currentQuoteId]);
 
+  // Template Handlers
+  const handleSaveTemplate = useCallback((name: string) => {
+    if (!currentQuote) return;
+    const newTemplate: QuoteTemplate = {
+      id: `tpl-${Date.now()}`,
+      name,
+      selections: currentQuote.selections,
+    };
+    setTemplates(prev => [...prev, newTemplate]);
+  }, [currentQuote]);
+
+  const handleApplyTemplate = useCallback((templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      updateCurrentQuote({ selections: template.selections });
+      setIsTemplateManagerOpen(false);
+    }
+  }, [templates, updateCurrentQuote]);
+
+  const handleDeleteTemplate = useCallback((templateId: string) => {
+    setTemplates(prev => prev.filter(t => t.id !== templateId));
+  }, []);
+
   // Calculate financials
   const quoteTotals = useMemo(() => {
     if (!currentQuote) return null;
@@ -275,6 +307,13 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+            <button
+                onClick={() => setIsTemplateManagerOpen(true)}
+                className="bg-white text-slate-600 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 border border-slate-200 transition-all shadow-sm flex items-center gap-2"
+              >
+                <Icon name="template" size={18} />
+                القوالب
+              </button>
             <button 
                 onClick={() => setIsPrintSettingsOpen(true)}
                 className="bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95"
@@ -309,6 +348,7 @@ const App: React.FC = () => {
             onUpdateBreakdown={handleUpdateBreakdown}
             onUpdateSpaces={handleUpdateSpaces}
             savedBreakdown={currentQuote.areaBreakdown}
+            quoteTotals={quoteTotals}
         />
 
         {/* Tab Navigation */}
@@ -430,6 +470,16 @@ const App: React.FC = () => {
         onSave={handleSaveCategory}
         onLiveUpdate={() => {}} 
         onDelete={handleDeleteCategory}
+      />
+      
+      {/* Template Manager Modal */}
+      <TemplateManager
+        isOpen={isTemplateManagerOpen}
+        onClose={() => setIsTemplateManagerOpen(false)}
+        templates={templates}
+        onSave={handleSaveTemplate}
+        onApply={handleApplyTemplate}
+        onDelete={handleDeleteTemplate}
       />
     </div>
   );
