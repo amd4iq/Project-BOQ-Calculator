@@ -1,118 +1,22 @@
-import React, { useState, useMemo } from 'react';
-import { ProjectDetails, AreaRow, QuoteType, Space } from '../types';
+
+import React, { useState } from 'react';
+import { ProjectDetails, AreaRow, QuoteType } from '../types';
 import { Icon } from './Icons';
-import { AreaCalculator } from './AreaCalculator';
-import { formatCurrency } from '../utils/format';
-
-const LevelSelector: React.FC<{
-  activeLevels: string[];
-  onChange: (activeLevels: string[]) => void;
-}> = ({ activeLevels, onChange }) => {
-  const allLevels = Array.from({ length: 10 }, (_, i) => ({
-    id: `level-${i + 1}`,
-    value: i + 1,
-  }));
-
-  const totalPercentage = useMemo(() => {
-    return activeLevels.reduce((sum, levelId) => {
-      const levelValue = parseInt(levelId.split('-')[1]);
-      return sum + (levelValue * 10);
-    }, 0);
-  }, [activeLevels]);
-
-  const handleToggleLevel = (levelId: string, levelValue: number) => {
-    const isCurrentlyActive = activeLevels.includes(levelId);
-    if (!isCurrentlyActive && (totalPercentage + (levelValue * 10) > 100)) {
-        // Prevent adding if it exceeds 100%
-        return;
-    }
-
-    const newLevels = isCurrentlyActive
-      ? activeLevels.filter(l => l !== levelId)
-      : [...activeLevels, levelId];
-    
-    onChange(newLevels.sort((a, b) => parseInt(a.split('-')[1]) - parseInt(b.split('-')[1])));
-  };
-
-  return (
-    <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200">
-      <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
-        <Icon name="sofa" size={18} className="text-primary-600" />
-        توزيع نسب المشروع
-      </h4>
-      <p className="text-xs text-slate-500 mt-1 pr-1">
-        حدد المستويات لتقسيم المشروع. رقم المستوى يمثل نسبته المئوية (مثال: المستوى 3 = 30%). يجب أن لا يتجاوز المجموع 100%.
-      </p>
-
-       <div className="my-4">
-        <div className="flex justify-between items-center mb-1 text-xs">
-            <span className="font-bold text-slate-500">النسبة المئوية الموزعة</span>
-            <span className={`font-bold ${totalPercentage > 100 ? 'text-rose-500' : 'text-emerald-600'}`}>
-                {totalPercentage}% / 100%
-            </span>
-        </div>
-        <div className="w-full bg-slate-200 rounded-full h-2.5 relative overflow-hidden">
-            <div 
-                className={`h-full rounded-full transition-all duration-300 ${totalPercentage > 100 ? 'bg-rose-500' : 'bg-primary-500'}`}
-                style={{ width: `${Math.min(totalPercentage, 100)}%` }}
-            ></div>
-        </div>
-        {totalPercentage > 100 && (
-            <p className="text-xs text-center text-rose-500 mt-2 font-bold">
-                المجموع يتجاوز 100%. يرجى تعديل الاختيارات.
-            </p>
-        )}
-      </div>
-
-      <div className="mt-4 grid grid-cols-5 sm:grid-cols-10 gap-3">
-        {allLevels.map(({ id, value }) => {
-          const isChecked = activeLevels.includes(id);
-          const isDisabled = !isChecked && (totalPercentage + (value * 10) > 100);
-
-          return (
-            <div key={id}>
-              <input
-                type="checkbox"
-                id={id}
-                checked={isChecked}
-                onChange={() => handleToggleLevel(id, value)}
-                disabled={isDisabled}
-                className="hidden peer"
-              />
-              <label
-                htmlFor={id}
-                className={`
-                  block p-3 text-center rounded-xl border-2 transition-all duration-200
-                  ${isDisabled 
-                    ? 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed' 
-                    : `cursor-pointer bg-white border-slate-200 text-slate-500 hover:border-slate-400 
-                       peer-checked:bg-primary-50 peer-checked:border-primary-500 peer-checked:text-primary-700 peer-checked:shadow-sm`
-                  }
-                `}
-              >
-                <span className="font-black text-lg sm:text-xl">{value}</span>
-                <span className="block text-xs font-bold mt-1">مستوى</span>
-              </label>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
+import { AreaCalculator } from './ConstructionOffers/AreaCalculator';
+import { AreaBreakdownDetails } from './ConstructionOffers/AreaBreakdownDetails';
+import { SpaceDistributor } from './FinishingOffers/SpaceDistributor';
 
 interface ProjectInfoProps {
   details: ProjectDetails;
   quoteType: QuoteType;
   onChange: (field: keyof ProjectDetails, value: any) => void;
   onUpdateBreakdown: (breakdown: AreaRow[]) => void;
-  onUpdateSpaces: (spaces: Space[]) => void;
   savedBreakdown?: AreaRow[];
   quoteTotals: any;
+  isReadOnly: boolean;
 }
 
-export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, onChange, onUpdateBreakdown, onUpdateSpaces, savedBreakdown, quoteTotals }) => {
+export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, onChange, onUpdateBreakdown, savedBreakdown, quoteTotals, isReadOnly }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
@@ -154,14 +58,15 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-blue-900 mb-1">المعايير الأساسية</label>
-                            <p className="text-xs text-blue-600 opacity-80">يتم احتساب التكلفة بناءً على المساحة وعدد الطوابق</p>
+                            <p className="text-xs text-blue-600 opacity-80">يتم احتساب التكلفة بناءً على المساحة</p>
                         </div>
                      </div>
                      <div className="flex items-center gap-2">
                          <button 
                             onClick={(e) => { e.stopPropagation(); setIsCalculatorOpen(true); }}
-                            className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 p-3 rounded-xl border border-blue-200 shadow-sm transition-all active:scale-95"
+                            className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 p-3 rounded-xl border border-blue-200 shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                             title="حاسبة المساحة (جمع الطوابق والأشكال)"
+                            disabled={isReadOnly}
                          >
                              <Icon name="calculator" size={20} />
                          </button>
@@ -172,22 +77,11 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                                 min="1"
                                 value={details.areaSize}
                                 onChange={(e) => onChange('areaSize', Number(e.target.value))}
-                                className="w-full sm:w-32 text-center text-2xl font-black text-slate-800 outline-none bg-transparent"
+                                className="w-full sm:w-32 text-center text-2xl font-black text-slate-800 outline-none bg-transparent disabled:bg-slate-50 disabled:text-slate-500"
                                 placeholder="0"
+                                readOnly={isReadOnly}
                             />
                             <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold text-sm select-none">م²</span>
-                         </div>
-                         <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-blue-200 shadow-sm w-full sm:w-auto focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400 transition-all">
-                            <Icon name="building-floors" size={16} className="text-slate-400 ml-2" />
-                            <input
-                                type="number"
-                                min="1"
-                                value={details.numberOfFloors}
-                                onChange={(e) => onChange('numberOfFloors', Number(e.target.value))}
-                                className="w-full sm:w-16 text-center text-2xl font-black text-slate-800 outline-none bg-transparent"
-                                placeholder="1"
-                            />
-                            <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg font-bold text-sm select-none">طابق</span>
                          </div>
                      </div>
                 </div>
@@ -202,15 +96,17 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                             type="text"
                             value={details.customerName}
                             onChange={(e) => onChange('customerName', e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 disabled:bg-slate-100 disabled:text-slate-500"
                             placeholder="اسم الزبون الكامل"
+                            readOnly={isReadOnly}
                         />
                         <input
                             type="text"
                             value={details.customerNumber}
                             onChange={(e) => onChange('customerNumber', e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-mono font-medium focus:bg-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-mono font-medium focus:bg-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 disabled:bg-slate-100 disabled:text-slate-500"
                             placeholder="07xxxxxxxxx"
+                            readOnly={isReadOnly}
                         />
                     </div>
                     <div className="space-y-4">
@@ -222,28 +118,31 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                             type="text"
                             value={details.projectName}
                             onChange={(e) => onChange('projectName', e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-bold focus:bg-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 disabled:bg-slate-100 disabled:text-slate-500"
                             placeholder="عنوان المشروع"
+                            readOnly={isReadOnly}
                         />
                         <div className="flex gap-4">
                             <input
                                 type="text"
                                 value={details.employeeName}
                                 onChange={(e) => onChange('employeeName', e.target.value)}
-                                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:border-blue-500 outline-none transition-all"
+                                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:border-blue-500 outline-none transition-all disabled:bg-slate-100 disabled:text-slate-500"
                                 placeholder="اسم الموظف"
+                                readOnly // Always read-only as it's set by the system
                             />
                             <input
                                 type="date"
                                 value={details.date}
                                 onChange={(e) => onChange('date', e.target.value)}
-                                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:border-blue-500 outline-none transition-all font-mono"
+                                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:border-blue-500 outline-none transition-all font-mono disabled:bg-slate-100 disabled:text-slate-500"
+                                readOnly={isReadOnly}
                             />
                         </div>
                     </div>
                 </div>
                 
-                {/* Enhanced Budgeting Tool */}
+                {/* 1. Budgeting Tool */}
                 <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${details.enableBudgeting ? 'bg-primary-50/50 border-primary-200' : 'bg-slate-50 border-slate-200'}`}>
                   <div className="flex items-center justify-between">
                     <div>
@@ -255,7 +154,7 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                         قارن التكلفة الإجمالية مع ميزانية الزبون المستهدفة.
                       </p>
                     </div>
-                    <label htmlFor="enableBudgeting" className="flex items-center cursor-pointer">
+                    <label htmlFor="enableBudgeting" className={`flex items-center ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                       <div className="relative">
                         <input
                           type="checkbox"
@@ -263,6 +162,7 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                           className="sr-only peer"
                           checked={!!details.enableBudgeting}
                           onChange={(e) => onChange('enableBudgeting', e.target.checked)}
+                          disabled={isReadOnly}
                         />
                         <div className="block bg-slate-300 peer-checked:bg-primary-600 w-12 h-7 rounded-full transition-colors"></div>
                         <div className="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
@@ -281,20 +181,63 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                           type="number"
                           value={details.targetBudget || ''}
                           onChange={(e) => onChange('targetBudget', Number(e.target.value))}
-                          className="w-full pr-10 pl-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all placeholder:text-slate-400"
+                          className="w-full pr-10 pl-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-500"
                           placeholder="ادخل ميزانية الزبون"
+                          readOnly={isReadOnly}
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
+                {/* 2. Area Breakdown */}
+                {savedBreakdown && savedBreakdown.length > 0 && details.areaSize > 0 && (
+                   <AreaBreakdownDetails breakdown={savedBreakdown} totalArea={details.areaSize} />
+                )}
 
+                {/* 3. Space Distributor (Finishes only) */}
                 {quoteType === 'finishes' && (
-                    <LevelSelector 
-                        activeLevels={details.activeLevels || []}
-                        onChange={(newLevels) => onChange('activeLevels', newLevels)}
-                    />
+                  <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${details.enableSpaceDistribution ? 'bg-primary-50/50 border-primary-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                          <Icon name="sofa" size={18} className="text-primary-600" />
+                          توزيع فضاءات المشروع
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          تفعيل لتخصيص مواصفات مختلفة لكل فضاء (غرفة) في المشروع.
+                        </p>
+                      </div>
+                      <label htmlFor="enableSpaceDistribution" className={`flex items-center ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            id="enableSpaceDistribution"
+                            className="sr-only peer"
+                            checked={!!details.enableSpaceDistribution}
+                            onChange={(e) => onChange('enableSpaceDistribution', e.target.checked)}
+                            disabled={isReadOnly}
+                          />
+                          <div className="block bg-slate-300 peer-checked:bg-primary-600 w-12 h-7 rounded-full transition-colors"></div>
+                          <div className="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
+                        </div>
+                      </label>
+                    </div>
+
+                    {details.enableSpaceDistribution && (
+                      <div className="mt-4 pt-4 border-t border-primary-100 animate-in fade-in duration-500">
+                        <p className="text-xs text-slate-500 mb-4 pr-1">
+                          عرّف الفضاءات المختلفة للمشروع وحدد مساحة كل منها. يجب أن يتطابق مجموع المساحات مع المساحة الإجمالية.
+                        </p>
+                        <SpaceDistributor 
+                          spaces={details.spaces || []}
+                          totalArea={details.areaSize}
+                          onChange={(newSpaces) => onChange('spaces', newSpaces)}
+                          isReadOnly={isReadOnly}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
             </div>
         )}

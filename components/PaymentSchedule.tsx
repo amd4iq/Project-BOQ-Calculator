@@ -8,15 +8,17 @@ interface PaymentScheduleProps {
   schedule: PaymentStage[];
   totalAmount: number;
   onChange: (schedule: PaymentStage[]) => void;
+  isReadOnly: boolean;
 }
 
-export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, totalAmount, onChange }) => {
+export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, totalAmount, onChange, isReadOnly }) => {
   const totalPercentage = schedule.reduce((sum, item) => sum + item.percentage, 0);
   // Allow slight floating point error tolerance
   const isTotalValid = Math.abs(totalPercentage - 100) < 0.1;
   const remainingPercentage = 100 - totalPercentage;
 
   const handleUpdate = (id: string, field: keyof PaymentStage, value: any) => {
+    if (isReadOnly) return;
     const newSchedule = schedule.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     );
@@ -24,6 +26,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
   };
 
   const handleAddStage = () => {
+    if (isReadOnly) return;
     const remaining = Math.max(0, 100 - totalPercentage);
     const newStage: PaymentStage = {
       id: `pay-${Date.now()}`,
@@ -34,6 +37,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
   };
 
   const handleDeleteStage = (id: string) => {
+    if (isReadOnly) return;
     if (schedule.length <= 1) {
         alert("يجب أن يحتوي الجدول على دفعة واحدة على الأقل");
         return;
@@ -42,7 +46,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
   };
 
   const handleAutoFix = () => {
-      if (schedule.length === 0) return;
+      if (isReadOnly || schedule.length === 0) return;
       
       const diff = 100 - totalPercentage;
       const newSchedule = [...schedule];
@@ -64,7 +68,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col print:border-none print:shadow-none print:rounded-none">
+    <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full flex flex-col print:border-none print:shadow-none print:rounded-none ${isReadOnly ? 'opacity-70' : ''}`}>
       
       {/* Visual Progress Bar (Screen Only) */}
       <div className="h-3 w-full flex print:hidden bg-slate-100 border-b border-slate-100">
@@ -105,7 +109,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
             {!isTotalValid ? (
                 <div className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm ${totalPercentage > 100 ? 'bg-red-50 text-red-600 border-red-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
                     <span>المجموع: {totalPercentage.toFixed(1)}%</span>
-                    {totalPercentage < 100 && (
+                    {totalPercentage < 100 && !isReadOnly && (
                         <button onClick={handleAutoFix} className="underline hover:text-amber-800 ml-1">
                             (تصحيح)
                         </button>
@@ -151,8 +155,9 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                                             type="text"
                                             value={stage.name}
                                             onChange={(e) => handleUpdate(stage.id, 'name', e.target.value)}
-                                            className="w-full bg-slate-50 hover:bg-white focus:bg-white px-3 py-2 rounded-md border border-transparent hover:border-slate-200 focus:border-primary-300 outline-none font-bold text-slate-700 print:text-black print:bg-transparent print:p-0 print:border-none transition-all placeholder:text-slate-300"
+                                            className="w-full bg-slate-50 hover:bg-white focus:bg-white px-3 py-2 rounded-md border border-transparent hover:border-slate-200 focus:border-primary-300 outline-none font-bold text-slate-700 print:text-black print:bg-transparent print:p-0 print:border-none transition-all placeholder:text-slate-300 disabled:bg-slate-100 disabled:cursor-not-allowed"
                                             placeholder="اسم المرحلة..."
+                                            disabled={isReadOnly}
                                         />
                                     </div>
                                 </td>
@@ -164,7 +169,8 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                                             max="100"
                                             value={stage.percentage}
                                             onChange={(e) => handleUpdate(stage.id, 'percentage', Number(e.target.value))}
-                                            className="w-16 text-center bg-slate-50 hover:bg-white focus:bg-white px-1 py-1.5 rounded-md border border-slate-200 focus:border-primary-300 outline-none font-bold font-mono text-slate-800 print:text-black print:bg-transparent print:p-0 print:border-none print:w-auto"
+                                            className="w-16 text-center bg-slate-50 hover:bg-white focus:bg-white px-1 py-1.5 rounded-md border border-slate-200 focus:border-primary-300 outline-none font-bold font-mono text-slate-800 print:text-black print:bg-transparent print:p-0 print:border-none print:w-auto disabled:bg-slate-100 disabled:cursor-not-allowed"
+                                            disabled={isReadOnly}
                                         />
                                         <span className="text-slate-400 text-xs font-bold mr-1 print:text-black">%</span>
                                     </div>
@@ -175,6 +181,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                                     </div>
                                 </td>
                                 <td className="print:hidden text-center p-2 bg-slate-50/30">
+                                    {!isReadOnly && (
                                     <button 
                                         onClick={() => handleDeleteStage(stage.id)}
                                         className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg p-2 transition-all"
@@ -182,6 +189,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                                     >
                                         <Icon name="trash" size={16} />
                                     </button>
+                                    )}
                                 </td>
                             </tr>
                         );
@@ -206,6 +214,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
 
         {/* Add Button */}
         <div className="mt-4 print:hidden">
+            {!isReadOnly && (
             <button 
                 onClick={handleAddStage}
                 className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 font-bold hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition-all flex items-center justify-center gap-2 group"
@@ -215,6 +224,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                 </div>
                 اضافة دفعة جديدة
             </button>
+            )}
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ interface CategoryEditorProps {
   onSave: (category: Category) => void;
   onLiveUpdate: (category: Category) => void;
   onDelete?: (categoryId: string) => void;
+  isReadOnly: boolean;
 }
 
 export const CategoryEditor: React.FC<CategoryEditorProps> = ({ 
@@ -17,7 +18,8 @@ export const CategoryEditor: React.FC<CategoryEditorProps> = ({
   onClose, 
   onSave,
   onLiveUpdate,
-  onDelete
+  onDelete,
+  isReadOnly
 }) => {
   const [tempId, setTempId] = useState('');
   const [title, setTitle] = useState('');
@@ -30,13 +32,12 @@ export const CategoryEditor: React.FC<CategoryEditorProps> = ({
   const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isReadOnly) {
       labelInputRefs.current = [];
       if (category) {
         setTempId(category.id);
         setTitle(category.title);
         setAllowMultiple(!!category.allowMultiple);
-        // Ensure costType exists
         setOptions(category.options.map(o => ({...o, costType: o.costType || 'per_m2'})));
         prevOptionsLength.current = category.options.length;
       } else {
@@ -52,10 +53,10 @@ export const CategoryEditor: React.FC<CategoryEditorProps> = ({
     } else {
       isInitialized.current = false;
     }
-  }, [isOpen, category]);
+  }, [isOpen, category, isReadOnly]);
 
   useEffect(() => {
-    if (!isOpen || !isInitialized.current) return;
+    if (!isOpen || !isInitialized.current || isReadOnly) return;
 
     const currentCategory: Category = {
       id: tempId,
@@ -69,7 +70,7 @@ export const CategoryEditor: React.FC<CategoryEditorProps> = ({
     };
 
     onLiveUpdate(currentCategory);
-  }, [title, options, tempId, category, isOpen, onLiveUpdate, allowMultiple]);
+  }, [title, options, tempId, category, isOpen, onLiveUpdate, allowMultiple, isReadOnly]);
 
   useEffect(() => {
     if (options.length > prevOptionsLength.current) {
@@ -83,7 +84,7 @@ export const CategoryEditor: React.FC<CategoryEditorProps> = ({
     prevOptionsLength.current = options.length;
   }, [options.length]);
 
-  if (!isOpen) return null;
+  if (!isOpen || isReadOnly) return null;
 
   const handleAddOption = () => {
     setOptions([...options, { id: `opt-${Date.now()}`, label: '', cost: 0, costType: 'per_m2' }]);

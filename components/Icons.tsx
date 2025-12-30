@@ -46,7 +46,12 @@ import {
   Sofa,
   DoorOpen,
   Check,
-  Search
+  Search,
+  Home,
+  Archive,
+  LogOut,
+  Users,
+  DollarSign
 } from 'lucide-react';
 
 interface IconProps {
@@ -88,6 +93,7 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'package': return <PackageCheck className={className} size={size} />;
     case 'image-plus': return <ImagePlus className={className} size={size} />;
     case 'user': return <User className={className} size={size} />;
+    case 'users': return <Users className={className} size={size} />;
     case 'phone': return <Phone className={className} size={size} />;
     case 'building': return <Building2 className={className} size={size} />;
     case 'building-floors': return <Building className={className} size={size} />;
@@ -95,6 +101,7 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'triangle': return <Triangle className={className} size={size} />;
     case 'pin': return <Pin className={className} size={size} />;
     case 'search': return <Search className={className} size={size} />;
+    case 'dollar-sign': return <DollarSign className={className} size={size} />;
     
     // Finishes Icons
     case 'blinds': return <Blinds className={className} size={size} />;
@@ -102,6 +109,11 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'bath': return <Bath className={className} size={size} />;
     case 'sofa': return <Sofa className={className} size={size} />;
     case 'window': return <DoorOpen className={className} size={size} />; // Using DoorOpen for window as a placeholder
+
+    // New Icons
+    case 'home': return <Home className={className} size={size} />;
+    case 'archive': return <Archive className={className} size={size} />;
+    case 'log-out': return <LogOut className={className} size={size} />;
 
     // Selection Icons
     case 'circle': return <Circle className={className} size={size} />;

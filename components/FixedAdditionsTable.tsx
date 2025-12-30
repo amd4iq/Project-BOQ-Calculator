@@ -10,6 +10,8 @@ interface FixedAdditionsTableProps {
   onSelect: (categoryId: string, optionId: string) => void;
   onEditCategory: (category: Category) => void;
   onUpdateCategory: (category: Category) => void;
+  isReadOnly: boolean;
+  canEdit: boolean;
 }
 
 export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({ 
@@ -18,6 +20,8 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
   onSelect,
   onEditCategory,
   onUpdateCategory,
+  isReadOnly,
+  canEdit,
 }) => {
   const [quickLabel, setQuickLabel] = useState('');
   const [quickCost, setQuickCost] = useState('');
@@ -27,7 +31,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
     .reduce((sum, opt) => sum + opt.cost, 0);
 
   const handleQuickAdd = () => {
-    if (!quickLabel.trim()) return;
+    if (!quickLabel.trim() || !canEdit) return;
     const cost = parseFloat(quickCost) || 0;
     
     const newOption = {
@@ -49,6 +53,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
 
   const handleDelete = (e: React.MouseEvent, optionId: string) => {
       e.stopPropagation();
+      if(!canEdit) return;
       if(!window.confirm('هل أنت متأكد من حذف هذا البند؟')) return;
       
       const updatedCategory = {
@@ -65,7 +70,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
   const priceHeader = 'السعر الإفرادي';
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-in fade-in zoom-in-95 duration-300">
+    <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full animate-in fade-in zoom-in-95 duration-300 ${isReadOnly ? 'opacity-70' : ''}`}>
       
       <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-4">
@@ -80,13 +85,15 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
           </div>
         </div>
 
-        <button 
-          onClick={() => onEditCategory(category)}
-          className="text-sm bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 hover:border-slate-300 font-bold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2"
-        >
-           <Icon name="settings" size={16} />
-           إدارة القائمة
-        </button>
+        {canEdit && (
+          <button 
+            onClick={() => onEditCategory(category)}
+            className="text-sm bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 hover:border-slate-300 font-bold px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2"
+          >
+            <Icon name="settings" size={16} />
+            إدارة القائمة
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-x-auto">
@@ -97,10 +104,11 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
               <th className="px-6 py-3 font-extrabold w-1/2">تفاصيل البند / الخدمة</th>
               <th className="px-6 py-3 font-extrabold text-left">{priceHeader}</th>
               <th className="px-6 py-3 font-extrabold w-32 text-center">الحالة</th>
-              <th className="px-4 py-3 w-16"></th>
+              {canEdit && <th className="px-4 py-3 w-16"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
+            {canEdit && (
             <tr className="bg-slate-50/80 border-b border-slate-100 shadow-inner">
                 <td className="px-6 py-3 text-center">
                     <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
@@ -127,7 +135,7 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all placeholder:text-slate-400 font-mono"
                     />
                 </td>
-                <td className="px-6 py-3 text-center" colSpan={2}>
+                <td className="px-6 py-3 text-center" colSpan={canEdit ? 2 : 1}>
                     <button
                         onClick={handleQuickAdd}
                         disabled={!quickLabel.trim()}
@@ -137,10 +145,11 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
                     </button>
                 </td>
             </tr>
+            )}
 
             {category.options.length === 0 ? (
                <tr>
-                 <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                 <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                         <p>لا توجد بنود مضافة في هذه القائمة.</p>
                     </div>
@@ -154,9 +163,9 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
                 return (
                     <tr 
                     key={option.id}
-                    onClick={() => onSelect(category.id, option.id)}
+                    onClick={() => !isReadOnly && onSelect(category.id, option.id)}
                     className={`
-                        group cursor-pointer transition-all duration-200
+                        group ${!isReadOnly ? 'cursor-pointer' : ''} transition-all duration-200
                         ${isSelected ? 'bg-indigo-50/40 hover:bg-indigo-50/60' : 'hover:bg-slate-50'}
                     `}
                     >
@@ -188,15 +197,17 @@ export const FixedAdditionsTable: React.FC<FixedAdditionsTableProps> = ({
                             </span>
                          )}
                     </td>
-                    <td className="px-4 py-4 text-center">
-                        <button
-                            onClick={(e) => handleDelete(e, option.id)}
-                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                            title="حذف البند"
-                        >
-                            <Icon name="trash" size={16} />
-                        </button>
-                    </td>
+                    {canEdit && (
+                        <td className="px-4 py-4 text-center">
+                            <button
+                                onClick={(e) => handleDelete(e, option.id)}
+                                className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                title="حذف البند"
+                            >
+                                <Icon name="trash" size={16} />
+                            </button>
+                        </td>
+                    )}
                     </tr>
                 );
                 })

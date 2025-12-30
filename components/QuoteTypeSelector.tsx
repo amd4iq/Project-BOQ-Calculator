@@ -2,12 +2,17 @@
 import React from 'react';
 import { Icon } from './Icons';
 import { QuoteType } from '../types';
+import { useAuth } from './Auth/AuthContext';
 
 interface QuoteTypeSelectorProps {
   onSelect: (type: QuoteType) => void;
+  onGoToArchive: () => void;
+  onGoToSettings: () => void;
 }
 
-export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect }) => {
+export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect, onGoToArchive, onGoToSettings }) => {
+  const { logout } = useAuth();
+
   return (
     <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center p-8 text-white">
       <div className="text-center mb-12">
@@ -46,8 +51,33 @@ export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect }
         </div>
       </div>
 
-      <footer className="absolute bottom-8 text-center text-slate-600 text-sm">
-        &copy; {new Date().getFullYear()} شركة معالم بغداد للمقاولات العامة.
+      <footer className="absolute bottom-8 left-8 right-8 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-3">
+            <button
+                onClick={onGoToArchive}
+                className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white py-2 px-4 rounded-xl font-bold text-sm transition-all"
+            >
+                <Icon name="archive" size={16} />
+                الأرشيف
+            </button>
+            <button
+                onClick={onGoToSettings}
+                className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white py-2 px-4 rounded-xl font-bold text-sm transition-all"
+            >
+                <Icon name="settings" size={16} />
+                الإعدادات
+            </button>
+            <button
+                onClick={logout}
+                className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white py-2 px-4 rounded-xl font-bold text-sm transition-all"
+            >
+                <Icon name="log-out" size={16} />
+                تسجيل الخروج
+            </button>
+        </div>
+        <div className="text-center text-slate-600 text-sm">
+            &copy; {new Date().getFullYear()} شركة معالم بغداد للمقاولات العامة.
+        </div>
       </footer>
     </div>
   );

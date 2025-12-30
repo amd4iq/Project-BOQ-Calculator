@@ -1,8 +1,10 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// FIX: App is exported as default from './App'
 import App from './App';
+import { AuthProvider } from './components/Auth/AuthContext';
+import { AppSettingsProvider } from './contexts/AppSettingsContext';
+import { QuoteProvider } from './contexts/QuoteContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -12,6 +14,12 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <AppSettingsProvider>
+        <QuoteProvider>
+          <App />
+        </QuoteProvider>
+      </AppSettingsProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

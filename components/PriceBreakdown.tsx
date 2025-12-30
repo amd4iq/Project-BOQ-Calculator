@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Category, ProjectDetails, QuoteType, SelectionState, CategorySelection } from '../types';
 import { formatCurrency } from '../utils/format';
 import { Icon } from './Icons';
-import { QualityIndicator } from './QualityIndicator';
+import { QualityIndicator } from './ConstructionOffers/QualityIndicator';
 
 interface PriceBreakdownProps {
   categories: Category[];
@@ -20,6 +19,7 @@ interface PriceBreakdownProps {
   },
   quoteType: QuoteType;
   onBasePriceChange: (newPrice: number) => void;
+  isReadOnly: boolean;
 }
 
 const BudgetTracker: React.FC<{ details: ProjectDetails, total: number }> = ({ details, total }) => {
@@ -81,7 +81,8 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
   showIndividualPrices,
   quoteTotals,
   quoteType,
-  onBasePriceChange
+  onBasePriceChange,
+  isReadOnly
 }) => {
   const [isEditingBase, setIsEditingBase] = useState(false);
   
@@ -147,7 +148,7 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
       <div>
         <p className="font-bold text-slate-700 flex items-center gap-2">
           {isStructure ? 'التكلفة الأساسية للهيكل' : 'التكلفة الأساسية للإنهاءات'}
-          {!isEditingBase && (
+          {!isEditingBase && !isReadOnly && (
               <button 
                   onClick={() => { setIsEditingBase(true); setTempBasePrice(effectiveBasePrice); }}
                   className="p-1 text-slate-400 hover:text-primary-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"

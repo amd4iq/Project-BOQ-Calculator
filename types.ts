@@ -1,6 +1,16 @@
 
 export type QuoteType = 'structure' | 'finishes';
 
+export type QuoteStatus = 
+  | 'Draft'
+  | 'Approved'
+  | 'Printed - Pending Client Approval'
+  | 'Approved by Client'
+  | 'Rejected by Client'
+  | 'Expired'
+  | 'Contract Archived'
+  | 'Under Revision';
+
 export type CostType = 'per_m2' | 'fixed' | 'percentage';
 
 export interface Option {
@@ -30,7 +40,7 @@ export interface SelectionState {
 export interface Space {
   id: string;
   name: string;
-  weight: number;
+  weight: number; // Represents area in m² for 'finishes' quotes
 }
 
 export interface ProjectDetails {
@@ -45,7 +55,8 @@ export interface ProjectDetails {
   basePricePerM2?: number;
   targetBudget?: number;
   enableBudgeting?: boolean;
-  activeLevels?: string[];
+  enableSpaceDistribution?: boolean;
+  assignedEngineer?: string;
 }
 
 export interface StandardSpec {
@@ -58,7 +69,12 @@ export interface PrintSettings {
   showFooter: boolean;
   notes: string;
   showLogo: boolean;
-  logoUrl?: string; 
+  logoUrl?: string;
+  // New toggles for modular printing
+  showAreaBreakdown?: boolean;
+  showStandardSpecs?: boolean;
+  showPaymentSchedule?: boolean;
+  showTerms?: boolean;
 }
 
 export interface PaymentStage {
@@ -78,11 +94,41 @@ export interface AreaRow {
   dim3: number; // Unused
 }
 
+export interface HistoryEntry {
+  version: number;
+  changedAt: number;
+  changedBy: string;
+  reason?: string;
+  snapshot: Omit<SavedQuote, 'history'>;
+}
+
+export interface PrintLogEntry {
+  printedBy: string;
+  printedAt: number;
+  version: number;
+}
+
 export interface SavedQuote {
   id:string;
+  offerNumber: string;
+  version: number;
+  status: QuoteStatus;
+  
+  // Timestamps & Metadata
+  createdAt: number;
+  createdBy: string; // User Name
+  createdById: string; // User ID
   lastModified: number;
-  quoteType: QuoteType;
+  approvedAt?: number;
+  printedAt?: number;
+  validUntil?: number; // printedAt + 14 days
+  approvedByClientAt?: number;
+  rejectedByClientAt?: number;
+
   isPinned?: boolean;
+  
+  // Core Data
+  quoteType: QuoteType;
   categories: Category[];
   selections: SelectionState;
   projectDetails: ProjectDetails;
@@ -90,16 +136,34 @@ export interface SavedQuote {
   printSettings: PrintSettings;
   paymentSchedule?: PaymentStage[];
   areaBreakdown?: AreaRow[];
+  history?: HistoryEntry[];
+  printLog?: PrintLogEntry[];
 }
 
 export interface QuoteTemplate {
   id: string;
   name: string;
+  quoteType: QuoteType;
   selections: SelectionState;
 }
 
-export interface GlobalState {
-  quotes: SavedQuote[];
-  currentQuoteId: string;
-  templates?: QuoteTemplate[];
+export interface User {
+  id: string;
+  name: string; // This is the username for login
+  displayName?: string; // This is the visible name in the UI
+  role: 'engineer' | 'admin';
+  password?: string;
+}
+
+export interface CompanyInfo {
+  name: string;
+  address: string;
+  phone: string;
+  logoUrl: string; // Keep for now for backward compatibility, but UI is removed
+  termsAndConditions: string;
+}
+
+export interface BasePrices {
+    structure: number;
+    finishes: number;
 }

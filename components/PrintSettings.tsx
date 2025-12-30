@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PrintSettings as PrintSettingsType } from '../types';
 import { Icon } from './Icons';
@@ -9,6 +10,27 @@ interface PrintSettingsProps {
   onChange: (settings: PrintSettingsType) => void;
 }
 
+const Toggle: React.FC<{
+    label: string;
+    icon: string;
+    isChecked: boolean;
+    onToggle: () => void;
+}> = ({ label, icon, isChecked, onToggle }) => (
+    <div 
+        className="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-200 cursor-pointer hover:border-primary-200 transition-colors"
+        onClick={onToggle}
+    >
+        <div className="flex items-center gap-2">
+            <Icon name={icon} size={16} className={isChecked ? 'text-primary-600' : 'text-slate-500'} />
+            <span className="font-bold text-slate-700 text-sm">{label}</span>
+        </div>
+        <div className={`w-10 h-6 rounded-full transition-colors relative ${isChecked ? 'bg-primary-600' : 'bg-slate-300'}`}>
+            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${isChecked ? 'left-0.5 translate-x-4' : 'left-0.5 translate-x-0'}`}></div>
+        </div>
+    </div>
+);
+
+
 export const PrintSettings: React.FC<PrintSettingsProps> = ({ isOpen, onClose, settings, onChange }) => {
 
   if (!isOpen) return null;
@@ -19,109 +41,75 @@ export const PrintSettings: React.FC<PrintSettingsProps> = ({ isOpen, onClose, s
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 print:hidden animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Icon name="settings" className="text-primary-600" />
-              إعدادات الطباعة
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">تخصيص مظهر عرض السعر عند الطباعة او التصدير</p>
+        <div className="flex items-center p-5 border-b border-slate-100 bg-white">
+          <Icon name="settings" size={20} className="text-primary-600" />
+          <div className="mr-3">
+            <h2 className="text-lg font-bold text-slate-800">إعدادات الطباعة</h2>
+            <p className="text-xs text-slate-500">تخصيص محتوى عرض السعر للطباعة</p>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <Icon name="x" size={20} />
-          </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
+        <div className="p-5 overflow-y-auto custom-scrollbar">
           
-          {/* Section: Display Options */}
-          <section className="space-y-4">
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <Icon name="layout-template" size={14} />
-                محتوى العرض
-            </h3>
-
-            {/* Toggle 1: Details */}
-            <div 
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:border-primary-200 transition-colors"
-                onClick={() => handleChange('showDetails', !settings.showDetails)}
-            >
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${settings.showDetails ? 'bg-primary-100 text-primary-600' : 'bg-slate-200 text-slate-500'}`}>
-                        <Icon name="file-text" size={20} />
-                    </div>
-                    <div>
-                        <span className="block font-bold text-slate-700 text-sm">إظهار التفاصيل المالية</span>
-                        <span className="block text-xs text-slate-500 mt-0.5">عرض سعر كل فقرة بشكل منفصل في الجدول</span>
-                    </div>
-                </div>
-                <div className={`w-12 h-7 rounded-full transition-colors relative ${settings.showDetails ? 'bg-primary-600' : 'bg-slate-300'}`}>
-                    <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${settings.showDetails ? 'left-1 translate-x-0' : 'left-1 translate-x-5'}`}></div>
-                </div>
-            </div>
-
-            {/* Toggle 2: Footer */}
-            <div 
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:border-primary-200 transition-colors"
-                onClick={() => handleChange('showFooter', !settings.showFooter)}
-            >
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${settings.showFooter ? 'bg-primary-100 text-primary-600' : 'bg-slate-200 text-slate-500'}`}>
-                        <Icon name="pencil" size={20} />
-                    </div>
-                    <div>
-                        <span className="block font-bold text-slate-700 text-sm">تذييل الصفحة (التواقيع)</span>
-                        <span className="block text-xs text-slate-500 mt-0.5">إظهار أماكن لتوقيع الطرفين في أسفل العرض</span>
-                    </div>
-                </div>
-                <div className={`w-12 h-7 rounded-full transition-colors relative ${settings.showFooter ? 'bg-primary-600' : 'bg-slate-300'}`}>
-                    <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${settings.showFooter ? 'left-1 translate-x-0' : 'left-1 translate-x-5'}`}></div>
-                </div>
-            </div>
-          </section>
-
-          {/* Section: Notes */}
-          <section>
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Icon name="file-text" size={14} />
-                الملاحظات والشروط
-            </h3>
-            <div className="relative">
-                <textarea
-                value={settings.notes}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 text-sm focus:bg-white focus:ring-2 focus:ring-primary-100 focus:border-primary-400 outline-none min-h-[100px] resize-none transition-all"
-                placeholder="اكتب هنا أي ملاحظات إضافية، شروط تعاقدية، أو تفاصيل تريد إظهارها في نهاية عرض السعر..."
-                />
-                <div className="absolute bottom-3 left-3 text-slate-400 pointer-events-none">
-                    <Icon name="pencil" size={14} />
-                </div>
-            </div>
-          </section>
+          <div className="grid grid-cols-2 gap-3">
+            <Toggle
+                label="التفاصيل المالية"
+                icon="calculator"
+                isChecked={!!settings.showDetails}
+                onToggle={() => handleChange('showDetails', !settings.showDetails)}
+            />
+             <Toggle
+                label="جدول الذرعة"
+                icon="bar-chart"
+                isChecked={!!settings.showAreaBreakdown}
+                onToggle={() => handleChange('showAreaBreakdown', !settings.showAreaBreakdown)}
+            />
+            <Toggle
+                label="المواصفات القياسية"
+                icon="check"
+                isChecked={!!settings.showStandardSpecs}
+                onToggle={() => handleChange('showStandardSpecs', !settings.showStandardSpecs)}
+            />
+            <Toggle
+                label="جدول الدفعات"
+                icon="briefcase"
+                isChecked={!!settings.showPaymentSchedule}
+                onToggle={() => handleChange('showPaymentSchedule', !settings.showPaymentSchedule)}
+            />
+            <Toggle
+                label="الشروط والأحكام"
+                icon="file-text"
+                isChecked={!!settings.showTerms}
+                onToggle={() => handleChange('showTerms', !settings.showTerms)}
+            />
+            <Toggle
+                label="التذييل (التواقيع)"
+                icon="pencil"
+                isChecked={!!settings.showFooter}
+                onToggle={() => handleChange('showFooter', !settings.showFooter)}
+            />
+             <Toggle
+                label="شعار الشركة"
+                icon="image-plus"
+                isChecked={!!settings.showLogo}
+                onToggle={() => handleChange('showLogo', !settings.showLogo)}
+            />
+          </div>
 
         </div>
 
         {/* Footer Actions */}
-        <div className="p-5 border-t border-slate-100 bg-white flex justify-end gap-3">
+        <div className="p-5 border-t border-slate-100 bg-slate-50/70">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+            className="w-full px-6 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
           >
-            إغلاق
-          </button>
-          <button
-            onClick={() => { onClose(); setTimeout(() => window.print(), 300); }}
-            className="px-6 py-2.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 flex items-center gap-2"
-          >
-            <Icon name="printer" size={18} />
-            حفظ وطباعة
+            <Icon name="check" size={18} />
+            العودة للتأكيد
           </button>
         </div>
       </div>
