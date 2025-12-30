@@ -60,9 +60,13 @@ export const calculateQuoteTotals = (
 
   } else { // Finishes logic
     
+    const mode = projectDetails.specAllocationMode || (projectDetails.enableSpaceDistribution ? 'spaces' : 'percentage');
+    const isAllocated = projectDetails.enableSpaceDistribution;
+    
+    // --- MODE: SPACES ---
     const spacesForCalc: Space[] = projectDetails.spaces || [];
     const totalWeight = spacesForCalc.reduce((sum, s) => sum + (s.weight || 0), 0);
-    const isValidWeight = Math.abs(totalWeight - projectDetails.areaSize) < 0.1 && spacesForCalc.length > 0;
+    const isValidSpaceCalc = isAllocated && mode === 'spaces' && Math.abs(totalWeight - projectDetails.areaSize) < 0.1 && spacesForCalc.length > 0;
 
     let perM2Adjustments = 0;
     let fixedAdditionsTotal = 0;
@@ -72,6 +76,7 @@ export const calculateQuoteTotals = (
       const selection = selections[cat.id];
 
       if (cat.allowMultiple) {
+        // Handle Fixed Additions & Multi-select categories
         if (Array.isArray(selection)) {
           selection.forEach(optionId => {
             const option = cat.options.find(o => o.id === optionId);
@@ -80,9 +85,10 @@ export const calculateQuoteTotals = (
         }
       } else if (selection && typeof selection === 'object' && cat.options.length > 0) {
         const catSelection = selection as CategorySelection;
-        const baselineOption = cat.options[0];
-
-        if (isValidWeight && totalWeight > 0) {
+        const baselineOption = cat.options[0]; // Usually cost 0 or low (The standard spec included in Base Price)
+        
+        // Mode 1: Spaces (Calculate Weighted Average based on Area)
+        if (isValidSpaceCalc) {
           let actualWeightedCost = 0;
           spacesForCalc.forEach(space => {
             const spaceWeightPercentage = (space.weight || 0) / totalWeight;
@@ -102,7 +108,41 @@ export const calculateQuoteTotals = (
           const categoryAdjustment = actualWeightedCost - baselineOption.cost;
           perM2Adjustments += categoryAdjustment;
 
-        } else {
+        } 
+        // Mode 2: Percentage (Weighted Average based on User Input)
+        else if (isAllocated && mode === 'percentage') {
+            let weightedCost = 0;
+            let totalExplicitPercent = 0;
+            const percentages = catSelection.percentages || {};
+
+            // 1. Calculate weighted cost for explicitly weighted options (User Inputs)
+            Object.entries(percentages).forEach(([optId, pct]) => {
+                // Ignore the default option key if present in map (to avoid double counting, though UI handles this)
+                if (optId === catSelection.default) return; 
+                
+                const opt = cat.options.find(o => o.id === optId);
+                if (opt && pct > 0) {
+                    weightedCost += opt.cost * (pct / 100);
+                    totalExplicitPercent += pct;
+                }
+            });
+
+            // 2. Calculate remaining cost for the Default Option
+            const remainingPercent = Math.max(0, 100 - totalExplicitPercent);
+            const defaultOpt = cat.options.find(o => o.id === catSelection.default) || baselineOption;
+            weightedCost += defaultOpt.cost * (remainingPercent / 100);
+
+            // 3. The adjustment is the difference between this "Weighted Average Cost" and the Baseline Cost
+            // This ensures correct addition to the Base Price.
+            // Example: BasePrice includes Basic (5000). 
+            // WeightedCost comes out to 6500.
+            // Adjustment = 6500 - 5000 = 1500.
+            // Final Price = BasePrice + 1500.
+            const categoryAdjustment = weightedCost - baselineOption.cost;
+            perM2Adjustments += categoryAdjustment;
+        }
+        // Mode 3: Standard (Simple Default Selection)
+        else {
           const defaultOption = cat.options.find(o => o.id === catSelection.default) || baselineOption;
           const costDiff = defaultOption.cost - baselineOption.cost;
           perM2Adjustments += costDiff;
@@ -115,7 +155,8 @@ export const calculateQuoteTotals = (
     grandTotal = totalCostFromM2 + fixedAdditionsTotal;
     const basePriceComponentTotal = basePrice * areaSize;
 
-    if (isValidWeight) {
+    // Calculate individual space costs only if in space mode
+    if (isValidSpaceCalc) {
       spacesForCalc.forEach(space => {
         const spaceArea = space.weight;
         let perM2CostForSpace = basePrice;

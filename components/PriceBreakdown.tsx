@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Category, ProjectDetails, QuoteType, SelectionState, CategorySelection } from '../types';
 import { formatCurrency } from '../utils/format';
@@ -243,7 +244,7 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
                     </div>
                 </div>
                 
-                {isStructure && <QualityIndicator categories={categories} selections={selections} />}
+                <QualityIndicator categories={categories} selections={selections} quoteType={quoteType} />
             </div>
 
             <table className="hidden print:table print-table w-full">

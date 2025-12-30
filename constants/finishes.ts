@@ -1,7 +1,7 @@
 
 import { Category, StandardSpec, PaymentStage, SelectionState } from '../types';
 
-export const BASE_PRICE = 280000;
+export const BASE_PRICE = 300000;
 
 export const CATEGORIES: Category[] = [
   {
@@ -92,13 +92,13 @@ export const CATEGORIES: Category[] = [
 ];
 
 export const DEFAULT_SELECTIONS: SelectionState = {
-  window_frames: { default: 'wf-basic', overrides: {} },
-  electrical_switches: { default: 'es-basic', overrides: {} },
-  lighting: { default: 'l-basic', overrides: {} },
+  window_frames: { default: 'wf-basic', overrides: {}, percentages: {} },
+  electrical_switches: { default: 'es-basic', overrides: {}, percentages: {} },
+  lighting: { default: 'l-basic', overrides: {}, percentages: {} },
   sanitary: [],
-  wall_finishes: { default: 'wall-basic', overrides: {} },
-  flooring: { default: 'floor-porcelain', overrides: {} },
-  windows: { default: 'win-basic', overrides: {} },
+  wall_finishes: { default: 'wall-basic', overrides: {}, percentages: {} },
+  flooring: { default: 'floor-porcelain', overrides: {}, percentages: {} },
+  windows: { default: 'win-basic', overrides: {}, percentages: {} },
   fixed_additions: [],
 };
 

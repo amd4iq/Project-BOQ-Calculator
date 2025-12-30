@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { SavedQuote, QuoteStatus } from '../../types';
 import { Icon } from '../Icons';
 
@@ -12,31 +12,8 @@ interface ArchiveSettingsModalProps {
 }
 
 export const ArchiveSettingsModal: React.FC<ArchiveSettingsModalProps> = ({ quote, isOpen, onClose, onUpdateQuote, role }) => {
-  const [assignedEngineer, setAssignedEngineer] = useState('');
-  const [contractDate, setContractDate] = useState('');
-
-  useEffect(() => {
-      if (quote) {
-        setAssignedEngineer(quote.projectDetails.assignedEngineer || '');
-        // Assuming contract date might be stored somewhere in the future
-        setContractDate(''); 
-      }
-  }, [quote]);
-
 
   if (!isOpen || !quote) return null;
-
-  const handleSaveChanges = () => {
-    const updates: Partial<SavedQuote> = {
-        projectDetails: {
-            ...quote.projectDetails,
-            assignedEngineer: assignedEngineer
-        }
-    };
-    // We pass the quote's current status because we are only updating data, not the status itself.
-    onUpdateQuote(quote.id, quote.status, updates);
-    onClose();
-  };
 
   const handleUnlock = () => {
       if (window.confirm('هل أنت متأكد من فتح قفل هذا العرض؟ سيتم تغيير حالته إلى "قيد المراجعة" وسيظهر في قائمة العروض الحالية للمهندسين.')) {
@@ -71,34 +48,7 @@ export const ArchiveSettingsModal: React.FC<ArchiveSettingsModalProps> = ({ quot
 
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
-            <div className="space-y-2">
-                <label htmlFor="assigned-engineer" className="text-sm font-bold text-slate-700">المهندس المسؤول عن المشروع</label>
-                <select 
-                    id="assigned-engineer"
-                    value={assignedEngineer}
-                    onChange={(e) => setAssignedEngineer(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary-100 focus:border-primary-400 outline-none transition-all"
-                >
-                    <option value="">لم يتم التعيين</option>
-                    <option value="المهندس علي كريم">المهندس علي كريم</option>
-                    <option value="المهندس محمد احمد">المهندس محمد احمد</option>
-                    <option value="المهندسة فاطمة الزهراء">المهندسة فاطمة الزهراء</option>
-                </select>
-                <p className="text-xs text-slate-400 px-1">سيتم إرسال إشعار للمهندس المختار.</p>
-            </div>
-            
-             <div className="space-y-2">
-                <label htmlFor="contract-date" className="text-sm font-bold text-slate-700">تاريخ توقيع العقد</label>
-                <input
-                    type="date"
-                    id="contract-date"
-                    value={contractDate}
-                    onChange={(e) => setContractDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary-100 focus:border-primary-400 outline-none transition-all font-mono"
-                />
-            </div>
-
-            {role === 'admin' && (
+            {role === 'admin' ? (
               <div className="p-4 bg-amber-50 border-l-4 border-amber-400 text-amber-800">
                   <h4 className="font-bold">فتح قفل التعديل</h4>
                   <p className="text-xs mt-1">
@@ -111,6 +61,14 @@ export const ArchiveSettingsModal: React.FC<ArchiveSettingsModalProps> = ({ quot
                       السماح بالتعديل
                   </button>
               </div>
+            ) : (
+                <div className="text-center py-8">
+                    <Icon name="settings" size={32} className="mx-auto text-slate-300 mb-2"/>
+                    <h3 className="font-bold text-slate-600">لا توجد إعدادات متاحة</h3>
+                    <p className="text-sm text-slate-400 mt-1">
+                        يرجى التواصل مع مدير النظام لإجراء أي تغييرات.
+                    </p>
+                </div>
             )}
         </div>
 
@@ -120,14 +78,7 @@ export const ArchiveSettingsModal: React.FC<ArchiveSettingsModalProps> = ({ quot
             onClick={onClose}
             className="px-6 py-2.5 bg-white text-slate-600 font-bold rounded-xl hover:bg-slate-100 border border-slate-200 transition-colors"
           >
-            إلغاء
-          </button>
-          <button
-            onClick={handleSaveChanges}
-            className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
-          >
-            <Icon name="save" size={16} />
-            حفظ التغييرات
+            إغلاق
           </button>
         </div>
       </div>

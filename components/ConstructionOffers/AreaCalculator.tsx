@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../Icons';
 import { AreaRow, AreaShape } from '../../types';
@@ -126,7 +127,6 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
   };
 
   const totalArea = rows.reduce((sum, row) => sum + calculateRowArea(row), 0);
-  const diff = totalArea - currentArea;
 
   const handleApply = () => {
     onApply(Number(totalArea.toFixed(2)), rows);
@@ -199,18 +199,18 @@ export const AreaCalculator: React.FC<AreaCalculatorProps> = ({
         {/* Footer */}
         <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
-                <div className="text-right">
+            <div className="flex flex-col items-start gap-2">
+                <div>
                     <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest">ذرعة البناء النهائية</span>
                     <span className="block text-2xl font-black text-primary-700">{totalArea.toFixed(1)} م²</span>
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
                 <button onClick={onClose} className="flex-1 sm:flex-none px-6 py-3 text-slate-500 font-bold hover:bg-slate-200 rounded-xl">إلغاء</button>
                 <button onClick={handleApply} className="flex-1 sm:flex-none px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-xl shadow-primary-500/20 flex items-center justify-center gap-2">
                     <Icon name="check" size={18} />
-                    اعتماد النتيجة
+                    <span>اعتماد النتيجة ({totalArea.toFixed(1)} م²)</span>
                 </button>
             </div>
           </div>

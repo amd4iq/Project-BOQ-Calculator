@@ -20,6 +20,22 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
   const [isExpanded, setIsExpanded] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
+  // Determine current mode (default to 'spaces' if undefined for backward compatibility)
+  const allocationMode = details.specAllocationMode || (details.enableSpaceDistribution ? 'spaces' : 'percentage');
+  const isAllocationEnabled = details.enableSpaceDistribution; 
+
+  const handleAllocationToggle = (enabled: boolean) => {
+      onChange('enableSpaceDistribution', enabled);
+      // If enabling, ensure a mode is set (default to spaces)
+      if (enabled && !details.specAllocationMode) {
+          onChange('specAllocationMode', 'spaces');
+      }
+  };
+
+  const handleModeChange = (mode: 'spaces' | 'percentage') => {
+      onChange('specAllocationMode', mode);
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 mb-8 print:hidden overflow-hidden transition-all duration-300 hover:shadow-md">
@@ -62,6 +78,14 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                         </div>
                      </div>
                      <div className="flex items-center gap-2">
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); onChange('showAreaBreakdownUi', !details.showAreaBreakdownUi); }}
+                            className={`p-3 rounded-xl border shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed ${details.showAreaBreakdownUi ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 border-slate-200'}`}
+                            title={details.showAreaBreakdownUi ? "إخفاء تفاصيل الذرعة" : "عرض تفاصيل الذرعة"}
+                            disabled={isReadOnly}
+                         >
+                             <Icon name="bar-chart" size={20} />
+                         </button>
                          <button 
                             onClick={(e) => { e.stopPropagation(); setIsCalculatorOpen(true); }}
                             className="bg-white hover:bg-blue-50 text-blue-500 hover:text-blue-600 p-3 rounded-xl border border-blue-200 shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
@@ -191,50 +215,87 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                 </div>
 
                 {/* 2. Area Breakdown */}
-                {savedBreakdown && savedBreakdown.length > 0 && details.areaSize > 0 && (
+                {details.showAreaBreakdownUi && savedBreakdown && savedBreakdown.length > 0 && details.areaSize > 0 && (
                    <AreaBreakdownDetails breakdown={savedBreakdown} totalArea={details.areaSize} />
                 )}
 
-                {/* 3. Space Distributor (Finishes only) */}
+                {/* 3. Spec Allocation (Renamed from Space Distributor) */}
                 {quoteType === 'finishes' && (
-                  <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${details.enableSpaceDistribution ? 'bg-primary-50/50 border-primary-200' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className="flex items-center justify-between">
+                  <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${isAllocationEnabled ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                          <Icon name="sofa" size={18} className="text-primary-600" />
-                          توزيع فضاءات المشروع
+                          <Icon name="layers" size={18} className="text-indigo-600" />
+                          تخصيص المواصفات
                         </h4>
                         <p className="text-xs text-slate-500 mt-1">
-                          تفعيل لتخصيص مواصفات مختلفة لكل فضاء (غرفة) في المشروع.
+                          تفعيل هذا الخيار يسمح بتخصيص مواصفات مختلفة (إما حسب الفضاء أو حسب النسب المئوية).
                         </p>
                       </div>
-                      <label htmlFor="enableSpaceDistribution" className={`flex items-center ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                      
+                      <label htmlFor="enableSpaceDistribution" className={`flex items-center ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} self-end sm:self-auto`}>
                         <div className="relative">
                           <input
                             type="checkbox"
                             id="enableSpaceDistribution"
                             className="sr-only peer"
-                            checked={!!details.enableSpaceDistribution}
-                            onChange={(e) => onChange('enableSpaceDistribution', e.target.checked)}
+                            checked={!!isAllocationEnabled}
+                            onChange={(e) => handleAllocationToggle(e.target.checked)}
                             disabled={isReadOnly}
                           />
-                          <div className="block bg-slate-300 peer-checked:bg-primary-600 w-12 h-7 rounded-full transition-colors"></div>
+                          <div className="block bg-slate-300 peer-checked:bg-indigo-600 w-12 h-7 rounded-full transition-colors"></div>
                           <div className="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5"></div>
                         </div>
                       </label>
                     </div>
 
-                    {details.enableSpaceDistribution && (
-                      <div className="mt-4 pt-4 border-t border-primary-100 animate-in fade-in duration-500">
-                        <p className="text-xs text-slate-500 mb-4 pr-1">
-                          عرّف الفضاءات المختلفة للمشروع وحدد مساحة كل منها. يجب أن يتطابق مجموع المساحات مع المساحة الإجمالية.
-                        </p>
-                        <SpaceDistributor 
-                          spaces={details.spaces || []}
-                          totalArea={details.areaSize}
-                          onChange={(newSpaces) => onChange('spaces', newSpaces)}
-                          isReadOnly={isReadOnly}
-                        />
+                    {isAllocationEnabled && (
+                      <div className="mt-4 pt-4 border-t border-indigo-100 animate-in fade-in duration-500">
+                        {/* Allocation Mode Toggle */}
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-white p-1 rounded-xl border border-indigo-100 inline-flex shadow-sm">
+                                <button
+                                    onClick={() => handleModeChange('spaces')}
+                                    disabled={isReadOnly}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${allocationMode === 'spaces' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                                >
+                                    <Icon name="sofa" size={14} />
+                                    حسب الفضاءات
+                                </button>
+                                <button
+                                    onClick={() => handleModeChange('percentage')}
+                                    disabled={isReadOnly}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${allocationMode === 'percentage' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+                                >
+                                    <Icon name="pie-chart" size={14} />
+                                    حسب النسب (%)
+                                </button>
+                            </div>
+                        </div>
+
+                        {allocationMode === 'spaces' && (
+                            <div className="animate-in fade-in duration-300">
+                                <p className="text-xs text-slate-500 mb-4 pr-1">
+                                عرّف الفضاءات المختلفة للمشروع وحدد مساحة كل منها. يجب أن يتطابق مجموع المساحات مع المساحة الإجمالية.
+                                </p>
+                                <SpaceDistributor 
+                                spaces={details.spaces || []}
+                                totalArea={details.areaSize}
+                                onChange={(newSpaces) => onChange('spaces', newSpaces)}
+                                isReadOnly={isReadOnly}
+                                />
+                            </div>
+                        )}
+
+                        {allocationMode === 'percentage' && (
+                             <div className="animate-in fade-in duration-300 bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-center">
+                                <div className="inline-block p-3 bg-white rounded-full text-indigo-500 mb-2 shadow-sm"><Icon name="pie-chart" size={24}/></div>
+                                <h5 className="font-bold text-indigo-900 text-sm">نظام النسب المئوية مفعل</h5>
+                                <p className="text-xs text-indigo-700 mt-1 max-w-sm mx-auto">
+                                    يمكنك الآن تحديد نسب مئوية لكل خيار مباشرة من بطاقات المواصفات الفنية أدناه. سيتم احتساب السعر النهائي بناءً على النسب المدخلة.
+                                </p>
+                             </div>
+                        )}
                       </div>
                     )}
                   </div>

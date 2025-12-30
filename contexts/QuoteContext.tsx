@@ -112,6 +112,7 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 enableBudgeting: false,
                 targetBudget: 0,
                 enableSpaceDistribution: false,
+                specAllocationMode: 'spaces', // Default allocation mode
             },
             standardSpecs: constants.DEFAULT_STANDARD_SPECS,
             printSettings: {

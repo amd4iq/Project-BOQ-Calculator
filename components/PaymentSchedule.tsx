@@ -155,7 +155,7 @@ export const PaymentSchedule: React.FC<PaymentScheduleProps> = ({ schedule, tota
                                             type="text"
                                             value={stage.name}
                                             onChange={(e) => handleUpdate(stage.id, 'name', e.target.value)}
-                                            className="w-full bg-slate-50 hover:bg-white focus:bg-white px-3 py-2 rounded-md border border-transparent hover:border-slate-200 focus:border-primary-300 outline-none font-bold text-slate-700 print:text-black print:bg-transparent print:p-0 print:border-none transition-all placeholder:text-slate-300 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                                            className="w-full bg-slate-50 hover:bg-white focus:bg-white px-3 py-2 rounded-md border border-transparent hover:border-slate-200 focus:border-primary-300 outline-none text-xs font-bold text-slate-700 print:text-black print:bg-transparent print:p-0 print:border-none transition-all placeholder:text-slate-300 disabled:bg-slate-100 disabled:cursor-not-allowed"
                                             placeholder="اسم المرحلة..."
                                             disabled={isReadOnly}
                                         />

@@ -31,6 +31,7 @@ export interface Category {
 export interface CategorySelection {
   default: string; // default option id
   overrides: Record<string, string>; // { [spaceId]: optionId }
+  percentages?: Record<string, number>; // { [optionId]: percentage (0-100) }
 }
 
 export interface SelectionState {
@@ -55,8 +56,10 @@ export interface ProjectDetails {
   basePricePerM2?: number;
   targetBudget?: number;
   enableBudgeting?: boolean;
-  enableSpaceDistribution?: boolean;
+  enableSpaceDistribution?: boolean; // Kept for backward compatibility logic
+  specAllocationMode?: 'spaces' | 'percentage'; // New field for allocation mode
   assignedEngineer?: string;
+  showAreaBreakdownUi?: boolean; // New: Controls visibility of breakdown details in UI
 }
 
 export interface StandardSpec {

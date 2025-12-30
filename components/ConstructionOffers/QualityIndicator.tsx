@@ -1,15 +1,17 @@
+
 import React from 'react';
-import { Category, SelectionState, CategorySelection } from '../../types';
+import { Category, SelectionState, CategorySelection, QuoteType } from '../../types';
 import { Icon } from '../Icons';
 
 interface QualityIndicatorProps {
   categories: Category[];
   selections: SelectionState;
+  quoteType: QuoteType;
 }
 
-export const QualityIndicator: React.FC<QualityIndicatorProps> = ({ categories, selections }) => {
-  // Logic to calculate quality score (0-10)
-  const calculateScore = () => {
+export const QualityIndicator: React.FC<QualityIndicatorProps> = ({ categories, selections, quoteType }) => {
+  
+  const calculateStructureScore = () => {
     let score = 0;
 
     // 1. Brick Type
@@ -35,10 +37,42 @@ export const QualityIndicator: React.FC<QualityIndicatorProps> = ({ categories, 
     // Premium items bonus
     if (additionsList.includes('gate-cnc')) score += 2;
 
-    return Math.min(score, 10);
+    return score;
   };
 
-  const score = calculateScore();
+  const calculateFinishesScore = () => {
+    let score = 0;
+
+    // 1. Flooring (High impact)
+    const flooringSelection = selections['flooring'] as CategorySelection;
+    if (flooringSelection?.default === 'floor-marble' || flooringSelection?.default === 'floor-custom') score += 3;
+    else if (flooringSelection?.default === 'floor-porcelain') score += 1;
+
+    // 2. Wall Finishes
+    const wallSelection = selections['wall_finishes'] as CategorySelection;
+    if (wallSelection?.default === 'wall-slabs') score += 3;
+    if (wallSelection?.default === 'wall-custom') score += 2;
+    if (wallSelection?.default === 'wall-adv') score += 1;
+
+    // 3. Windows
+    const winSelection = selections['windows'] as CategorySelection;
+    if (winSelection?.default === 'win-custom') score += 2;
+    if (winSelection?.default === 'win-adv') score += 1;
+
+    // 4. Sanitary (Luxury items)
+    const sanitary = selections['sanitary'];
+    const sanitaryList = Array.isArray(sanitary) ? sanitary : [];
+    if (sanitaryList.includes('sn-jacuzzi')) score += 2;
+    if (sanitaryList.includes('sn-partition-custom') || sanitaryList.includes('sn-sink-custom')) score += 1;
+
+    // 5. Electrical
+    const lightingSelection = selections['lighting'] as CategorySelection;
+    if (lightingSelection?.default === 'l-custom' || lightingSelection?.default === 'l-advanced') score += 1;
+
+    return score;
+  };
+
+  const score = Math.min(quoteType === 'structure' ? calculateStructureScore() : calculateFinishesScore(), 10);
 
   const getStatus = () => {
     if (score <= 3) return { label: 'اقتصادي', color: 'bg-slate-500', text: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200', icon: 'zap' };
@@ -78,7 +112,10 @@ export const QualityIndicator: React.FC<QualityIndicatorProps> = ({ categories, 
       </div>
       
       <p className="mt-3 text-[10px] text-slate-500 font-medium leading-relaxed">
-        يعتمد هذا المؤشر على مستوى المواد المختارة، ارتفاع السقف، وحجم الإضافات الملحقة بالمشروع.
+        {quoteType === 'structure' 
+            ? 'يعتمد هذا المؤشر على نوع الطابوق، ارتفاع السقف، واستخدام صبة النظافة.'
+            : 'يعتمد هذا المؤشر على جودة الأرضيات (مرمر/بورسلان)، نوع تغليف الجدران، ونوعية الصحيات والشبابيك.'
+        }
       </p>
     </div>
   );

@@ -76,16 +76,29 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
 
   const handleApproveAndPrint = useCallback(() => {
     if (!currentQuote || !auth.currentUser) return;
-    setIsPrintConfirmationOpen(false); // Close confirmation modal first
+
+    // 1. Hide the print confirmation modal
+    setIsPrintConfirmationOpen(false);
+    
+    // Update quote status
     const now = Date.now();
     updateQuoteStatus(currentQuote.id, 'Printed - Pending Client Approval', {
         approvedAt: now,
         printedAt: now,
-        validUntil: now + (14 * 24 * 60 * 60 * 1000),
+        validUntil: now + (14 * 24 * 60 * 60 * 1000), // 14 days validity
         printLog: [...(currentQuote.printLog || []), { printedBy: auth.currentUser.displayName || auth.currentUser.name, printedAt: now, version: currentQuote.version }],
     });
-    setTimeout(() => window.print(), 300);
-    setTimeout(() => setIsConfirmationModalOpen(true), 10000);
+
+    // 2. Execute print after a short delay for DOM to update
+    setTimeout(() => {
+      window.print();
+      
+      // 3. Show the success modal 1 second after the print dialog is closed
+      setTimeout(() => {
+        setIsConfirmationModalOpen(true);
+      }, 1000);
+
+    }, 300);
   }, [currentQuote, updateQuoteStatus, auth.currentUser]);
 
   const handleSelection = useCallback((categoryId: string, newSelection: any) => {
@@ -132,10 +145,11 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
   }, [currentQuote?.quoteType]);
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-900" dir="rtl">
+    <div className="h-screen flex flex-col bg-slate-100 font-sans text-slate-900 overflow-hidden" dir="rtl">
       <PrintController quote={currentQuote} totals={quoteTotals} companyInfo={settings.companyInfo} />
       
-      <nav className="bg-white border-b border-slate-200 px-6 h-20 flex items-center justify-between sticky top-0 z-50 print:hidden shadow-sm">
+      {/* Fixed Navbar (h-20) */}
+      <nav className="bg-white border-b border-slate-200 px-6 h-20 shrink-0 flex items-center justify-between z-50 print:hidden shadow-sm">
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-2">
               <button
@@ -155,7 +169,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div>
                   <h1 className="text-xl font-black text-slate-800 leading-tight">
-                      {currentQuote.projectDetails.projectName || 'مشروع جديد'}
+                      معالم بغداد للعمارة والديكور
                   </h1>
                   <p className="text-xs text-slate-500 font-medium">
                       {currentQuote.quoteType === 'structure' ? 'عرض بناء هيكل' : 'عرض إنهاءات'}
@@ -215,64 +229,90 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
           </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 pb-24">
-         {isReadOnly && (
-            <div className="mb-6 p-4 bg-amber-50 text-amber-800 border-2 border-dashed border-amber-200 rounded-2xl flex items-center gap-3">
-                <Icon name="archive" size={24} className="text-amber-600" />
-                <div>
-                    <h3 className="font-bold">هذا عرض مؤرشف وهو للقراءة فقط.</h3>
-                    <p className="text-sm">لا يمكن تعديل هذا العرض لأن حالته هي "{currentQuote.status}". للتعديل، يجب على المدير فتح قفل العرض.</p>
+      {/* Main Layout - Full Height Split View */}
+      <main className="flex-1 w-full max-w-[1920px] mx-auto overflow-hidden">
+         <div className="flex flex-col lg:flex-row h-full">
+            
+            {/* RIGHT COLUMN (60%): Project Data & Specs - Scrolls Independently */}
+            <div className="w-full lg:w-[60%] h-full overflow-y-auto custom-scrollbar p-6 pb-24 space-y-6">
+                {isReadOnly && (
+                    <div className="p-4 bg-amber-50 text-amber-800 border-2 border-dashed border-amber-200 rounded-2xl flex items-center gap-3">
+                        <Icon name="archive" size={24} className="text-amber-600" />
+                        <div>
+                            <h3 className="font-bold">هذا عرض مؤرشف وهو للقراءة فقط.</h3>
+                            <p className="text-sm">لا يمكن تعديل هذا العرض لأن حالته هي "{currentQuote.status}". للتعديل، يجب على المدير فتح قفل العرض.</p>
+                        </div>
+                    </div>
+                )}
+                
+                <ProjectInfo 
+                    details={currentQuote.projectDetails}
+                    quoteType={currentQuote.quoteType}
+                    onChange={handleProjectDetailChange}
+                    onUpdateBreakdown={(breakdown: AreaRow[]) => updateCurrentQuote({ areaBreakdown: breakdown })}
+                    savedBreakdown={currentQuote.areaBreakdown}
+                    quoteTotals={quoteTotals}
+                    isReadOnly={isReadOnly}
+                />
+
+                <div className="flex items-center gap-2 mb-6 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm print:hidden">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            className={`flex items-center gap-2 flex-1 justify-center py-3 px-4 rounded-xl font-bold text-sm transition-all ${activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                            <Icon name={tab.icon} size={18} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="min-h-[300px]">
+                    {activeTab === 'technical' && (
+                        <div className="animate-in fade-in duration-500">
+                            <TechnicalSpecsTable categories={technicalCategories} selections={currentQuote.selections} onSelect={handleSelection} onEditCategory={(cat) => { setEditingCategory(cat); setIsEditorOpen(true); }} onNewCategory={() => { setEditingCategory(null); setIsEditorOpen(true); }} projectDetails={currentQuote.projectDetails} quoteType={currentQuote.quoteType} isReadOnly={isReadOnly} />
+                        </div>
+                    )}
+                    
+                    {activeTab === 'additions' && fixedAdditionsCategory && (
+                        <div className="animate-in fade-in duration-500">
+                            <FixedAdditionsTable category={fixedAdditionsCategory} selectedIds={(currentQuote.selections.fixed_additions as string[]) || []} onSelect={(catId, optId) => { const current = (currentQuote.selections.fixed_additions as string[]) || []; const next = current.includes(optId) ? current.filter(id => id !== optId) : [...current, optId]; handleSelection(catId, next); }} onEditCategory={(cat) => { setEditingCategory(cat); setIsEditorOpen(true); }} onUpdateCategory={(cat) => { const nextCats = currentQuote.categories.map(c => c.id === cat.id ? cat : c); updateCurrentQuote({ categories: nextCats }); }} isReadOnly={isReadOnly} canEdit={canEditSpecs} />
+                        </div>
+                    )}
+
+                    {activeTab === 'standard' && (
+                        <div className="animate-in fade-in duration-500">
+                            <StandardSpecs specs={currentQuote.standardSpecs} onAdd={(text: string) => updateCurrentQuote({ standardSpecs: [...currentQuote.standardSpecs, { id: Date.now().toString(), text }] })} onDelete={(id: string) => updateCurrentQuote({ standardSpecs: currentQuote.standardSpecs.filter(s => s.id !== id) })} onUpdate={(id: string, newText: string) => updateCurrentQuote({ standardSpecs: currentQuote.standardSpecs.map(s => s.id === id ? { ...s, text: newText } : s) })} isReadOnly={isReadOnly} />
+                        </div>
+                    )}
                 </div>
             </div>
-        )}
-        <ProjectInfo 
-            details={currentQuote.projectDetails}
-            quoteType={currentQuote.quoteType}
-            onChange={handleProjectDetailChange}
-            onUpdateBreakdown={(breakdown: AreaRow[]) => updateCurrentQuote({ areaBreakdown: breakdown })}
-            savedBreakdown={currentQuote.areaBreakdown}
-            quoteTotals={quoteTotals}
-            isReadOnly={isReadOnly}
-        />
 
-        <div className="flex items-center gap-2 mb-8 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm print:hidden">
-            {TABS.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-2 flex-1 justify-center py-3 px-4 rounded-xl font-bold text-sm transition-all ${activeTab === tab.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-200' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-                    <Icon name={tab.icon} size={18} />
-                    {tab.label}
-                </button>
-            ))}
-        </div>
+            {/* LEFT COLUMN (40%): Price & Payment - Scrolls Independently */}
+            <div className="w-full lg:w-[40%] h-full overflow-y-auto custom-scrollbar p-6 pb-24 space-y-6 bg-white border-r border-slate-200">
+                 {quoteTotals && (
+                    <>
+                        <PriceBreakdown 
+                            categories={currentQuote.categories} 
+                            selections={currentQuote.selections} 
+                            projectDetails={currentQuote.projectDetails} 
+                            showIndividualPrices={currentQuote.printSettings.showDetails} 
+                            quoteTotals={quoteTotals} 
+                            quoteType={currentQuote.quoteType} 
+                            onBasePriceChange={(val) => handleProjectDetailChange('basePricePerM2', val)} 
+                            isReadOnly={isReadOnly} 
+                        /> 
+                        <PaymentSchedule 
+                            schedule={currentQuote.paymentSchedule || []} 
+                            totalAmount={quoteTotals.grandTotal} 
+                            onChange={(schedule: PaymentStage[]) => updateCurrentQuote({ paymentSchedule: schedule })} 
+                            isReadOnly={isReadOnly} 
+                        />
+                    </>
+                 )}
+            </div>
 
-        <div className="mb-8 min-h-[300px]">
-            {activeTab === 'technical' && (
-                <div className="animate-in fade-in duration-500">
-                    <TechnicalSpecsTable categories={technicalCategories} selections={currentQuote.selections} onSelect={handleSelection} onEditCategory={(cat) => { setEditingCategory(cat); setIsEditorOpen(true); }} onNewCategory={() => { setEditingCategory(null); setIsEditorOpen(true); }} projectDetails={currentQuote.projectDetails} quoteType={currentQuote.quoteType} isReadOnly={isReadOnly} />
-                </div>
-            )}
-            
-            {activeTab === 'additions' && fixedAdditionsCategory && (
-                <div className="animate-in fade-in duration-500">
-                    <FixedAdditionsTable category={fixedAdditionsCategory} selectedIds={(currentQuote.selections.fixed_additions as string[]) || []} onSelect={(catId, optId) => { const current = (currentQuote.selections.fixed_additions as string[]) || []; const next = current.includes(optId) ? current.filter(id => id !== optId) : [...current, optId]; handleSelection(catId, next); }} onEditCategory={(cat) => { setEditingCategory(cat); setIsEditorOpen(true); }} onUpdateCategory={(cat) => { const nextCats = currentQuote.categories.map(c => c.id === cat.id ? cat : c); updateCurrentQuote({ categories: nextCats }); }} isReadOnly={isReadOnly} canEdit={canEditSpecs} />
-                </div>
-            )}
-
-            {activeTab === 'standard' && (
-                <div className="animate-in fade-in duration-500">
-                    <StandardSpecs specs={currentQuote.standardSpecs} onAdd={(text: string) => updateCurrentQuote({ standardSpecs: [...currentQuote.standardSpecs, { id: Date.now().toString(), text }] })} onDelete={(id: string) => updateCurrentQuote({ standardSpecs: currentQuote.standardSpecs.filter(s => s.id !== id) })} onUpdate={(id: string, newText: string) => updateCurrentQuote({ standardSpecs: currentQuote.standardSpecs.map(s => s.id === id ? { ...s, text: newText } : s) })} isReadOnly={isReadOnly} />
-                </div>
-            )}
-        </div>
-        
-        {quoteTotals && (
-             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <div className="lg:col-span-2"> <PriceBreakdown categories={currentQuote.categories} selections={currentQuote.selections} projectDetails={currentQuote.projectDetails} showIndividualPrices={currentQuote.printSettings.showDetails} quoteTotals={quoteTotals} quoteType={currentQuote.quoteType} onBasePriceChange={(val) => handleProjectDetailChange('basePricePerM2', val)} isReadOnly={isReadOnly} /> </div>
-                <div className="lg:col-span-3"> <PaymentSchedule schedule={currentQuote.paymentSchedule || []} totalAmount={quoteTotals.grandTotal} onChange={(schedule: PaymentStage[]) => updateCurrentQuote({ paymentSchedule: schedule })} isReadOnly={isReadOnly} /> </div>
-             </div>
-        )}
+         </div>
       </main>
 
       <QuoteSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} quotes={quotes} currentQuoteId={currentQuote.id} onSelectQuote={handleSelectQuote} onNewQuote={handleGoToWelcome} onDeleteQuote={handleDeleteQuote} onDuplicateQuote={handleDuplicateQuote} onTogglePin={handleTogglePin} onRenameQuote={handleRenameQuote} onSaveTemplate={handleOpenSaveTemplateModal} templates={templates} onApplyTemplate={handleApplyTemplate} onDeleteTemplate={handleDeleteTemplate} isReadOnly={isReadOnly} />
