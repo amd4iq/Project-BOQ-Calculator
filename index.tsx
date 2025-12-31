@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './components/Auth/AuthContext';
 import { AppSettingsProvider } from './contexts/AppSettingsContext';
 import { QuoteProvider } from './contexts/QuoteContext';
+import { ContractProvider } from './contexts/ContractContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,9 +17,11 @@ root.render(
   <React.StrictMode>
     <AuthProvider>
       <AppSettingsProvider>
-        <QuoteProvider>
-          <App />
-        </QuoteProvider>
+        <ContractProvider>
+            <QuoteProvider>
+            <App />
+            </QuoteProvider>
+        </ContractProvider>
       </AppSettingsProvider>
     </AuthProvider>
   </React.StrictMode>

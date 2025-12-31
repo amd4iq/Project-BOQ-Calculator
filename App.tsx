@@ -9,13 +9,17 @@ import { ArchiveView } from './components/ArchiveSys/ArchiveView';
 import { Workspace } from './components/Workspace';
 import { useQuote } from './contexts/QuoteContext';
 import { useAppSettings } from './contexts/AppSettingsContext';
+import { ContractsList } from './components/ContractManagement/ContractsList';
+import { ContractDashboard } from './components/ContractManagement/ContractDashboard';
 
 const App: React.FC = () => {
   const auth = useAuth();
   const { settings } = useAppSettings();
-  // FIX: Destructured 'quotes' and 'updateQuoteStatus' to pass them as props to the ArchiveView component.
   const { currentQuote, handleCreateQuote, setCurrentQuoteId, quotes, updateQuoteStatus } = useQuote();
-  const [viewMode, setViewMode] = useState<'workspace' | 'archive' | 'settings'>('workspace');
+  
+  // Navigation State
+  const [viewMode, setViewMode] = useState<'workspace' | 'archive' | 'settings' | 'contracts'>('workspace');
+  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
   const handleGoToWelcome = () => {
       setCurrentQuoteId(null);
@@ -36,14 +40,28 @@ const App: React.FC = () => {
   if (viewMode === 'archive') {
       return <ArchiveView 
                 allQuotes={quotes}
-                onClose={() => setViewMode('workspace')}
+                onClose={handleGoToWelcome}
                 onViewQuote={(id) => {
                     setCurrentQuoteId(id);
                     setViewMode('workspace');
                 }}
                 role={auth.currentUser.role}
                 onUpdateQuoteStatus={updateQuoteStatus}
+                onGoToContracts={() => setViewMode('contracts')}
+                onGoToSettings={() => setViewMode('settings')}
              />
+  }
+
+  if (viewMode === 'contracts') {
+      if (selectedContractId) {
+          return <ContractDashboard contractId={selectedContractId} onBack={() => setSelectedContractId(null)} />
+      }
+      return <ContractsList 
+                onSelectContract={setSelectedContractId} 
+                onClose={() => setViewMode('workspace')}
+                onGoToArchive={() => setViewMode('archive')}
+                onGoToSettings={() => setViewMode('settings')}
+             />;
   }
 
   if (!currentQuote) {
@@ -54,6 +72,7 @@ const App: React.FC = () => {
         }} 
         onGoToArchive={() => setViewMode('archive')}
         onGoToSettings={() => setViewMode('settings')}
+        onGoToContracts={() => setViewMode('contracts')}
     />;
   }
 

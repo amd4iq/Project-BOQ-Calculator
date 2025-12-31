@@ -9,7 +9,8 @@ export type QuoteStatus =
   | 'Rejected by Client'
   | 'Expired'
   | 'Contract Archived'
-  | 'Under Revision';
+  | 'Under Revision'
+  | 'Contract Signed'; // New Status
 
 export type CostType = 'per_m2' | 'fixed' | 'percentage';
 
@@ -169,4 +170,94 @@ export interface CompanyInfo {
 export interface BasePrices {
     structure: number;
     finishes: number;
+}
+
+// --- Contract Management Types ---
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string; // Added
+  specialty: string; 
+  notes?: string;
+}
+
+export interface Worker {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string; // Added
+  role: string; 
+  dailyWage: number;
+  notes?: string;
+}
+
+export interface Subcontractor {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string; // Added
+  specialty: string; 
+  companyName?: string;
+  defaultContractValue?: number; // Added
+}
+
+export interface SubcontractorAgreement {
+    id: string;
+    subcontractorId: string;
+    contractId: string;
+    totalAmount: number;
+    durationDays: number;
+    notes?: string;
+}
+
+export interface PaymentHistoryEntry {
+    id: string;
+    date: number;
+    amount: number;
+    attachmentUrl?: string;
+    note?: string;
+}
+
+export interface Expense {
+  id: string;
+  contractId: string;
+  date: number;
+  description: string;
+  amount: number;
+  paidAmount?: number; // New: Tracks how much of this credit expense has been paid back
+  paymentHistory?: PaymentHistoryEntry[]; // New: Detailed log of payments
+  category: 'Material' | 'Labor' | 'Transport' | 'Other' | 'DebtPayment';
+  beneficiaryType?: 'Supplier' | 'Worker' | 'Subcontractor'; // Explicit type
+  supplierId?: string; 
+  workerId?: string; 
+  subcontractorId?: string;
+  paymentMethod: 'Cash' | 'Credit'; // Cash = Paid immediately, Credit = Added to debt
+  attachmentUrl?: string; // Base64 image string
+}
+
+export interface ReceivedPayment {
+  id: string;
+  contractId: string;
+  scheduleStageId?: string; // Link to the original quote payment schedule
+  amount: number;
+  date: number;
+  note?: string;
+  isExtra?: boolean; // If true, this is outside the original schedule
+  attachmentUrl?: string; // Base64 image string
+}
+
+export interface Contract {
+  id: string;
+  contractNumber: string; 
+  quoteId: string;
+  offerNumber: string; 
+  quoteDate?: string; 
+  projectDetails: ProjectDetails; 
+  totalContractValue: number; 
+  status: 'Active' | 'Completed' | 'OnHold' | 'Cancelled';
+  startDate: number;
+  duration?: number; // Duration in days
+  paymentSchedule: PaymentStage[]; 
 }

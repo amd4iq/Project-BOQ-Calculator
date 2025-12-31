@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
@@ -36,6 +35,9 @@
       }
     </script>
     <style>
+      .scrollbar-gutter-stable {
+        scrollbar-gutter: stable;
+      }
       /* Custom Scrollbar */
       ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -49,18 +51,86 @@
           margin: 10mm;
         }
 
+        /* --- Landscape Mode for Archive List --- */
+        @page landscape {
+            size: landscape;
+            margin: 10mm;
+        }
+
+        /* This class forces landscape page and standard minimalist design */
+        .print-archive-list {
+            page: landscape;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: white !important;
+            font-family: sans-serif !important;
+        }
+
+        /* Reset all colors and styles for standard look within archive list */
+        .print-archive-list * {
+            color: black !important;
+            background-color: transparent !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        /* Force standard table grid */
+        .print-archive-list table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1px solid #000 !important;
+            font-size: 9pt !important; /* Small standard font */
+        }
+
+        .print-archive-list th,
+        .print-archive-list td {
+            border: 1px solid #000 !important;
+            padding: 4px 6px !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+        }
+
+        .print-archive-list th {
+            background-color: #f0f0f0 !important; /* Light grey header */
+            font-weight: bold !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        .print-archive-list td {
+             font-weight: normal !important;
+        }
+
+        /* Hide badges visuals, keep text */
+        .print-archive-list .status-badge {
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* --- End Landscape Mode --- */
+
         body {
           background: white !important;
           color: black !important;
           font-family: 'Cairo', sans-serif !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          font-size: 8.5pt;
+          font-size: 9pt;
           counter-reset: page;
         }
 
         .no-print, .print\:hidden { display: none !important; }
         .print\:block { display: block !important; }
+
+        /* Reset Tailwind colors for standard black/white print */
+        .print\:text-black { color: #000 !important; }
+        .print\:bg-white { background-color: #fff !important; }
+        .print\:bg-transparent { background-color: transparent !important; }
+        .print\:border-black { border-color: #000 !important; }
 
         .doc-print-page {
           height: calc(297mm - 20mm); /* A4 height minus margins */
@@ -76,7 +146,7 @@
             page-break-after: auto;
         }
         
-        /* IMPORTANT: Enforce 4-page limit */
+        /* IMPORTANT: Enforce 4-page limit for standard quotes */
         .doc-print-page:nth-child(n+5) {
             display: none !important;
         }

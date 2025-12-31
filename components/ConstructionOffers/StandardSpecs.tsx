@@ -198,7 +198,7 @@ export const StandardSpecs: React.FC<StandardSpecsProps> = ({ specs, onAdd, onDe
                                   <Icon name="trash" size={16} />
                               </button>
                           </div>
-                      )
+                      
                     )}
                   </td>
                 )}

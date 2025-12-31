@@ -34,7 +34,7 @@ interface QuoteContextType {
   handleSelectQuote: (id: string) => void;
   setCurrentQuoteId: (id: string | null) => void;
   handleDeleteQuote: (id: string) => void;
-  handleDuplicateQuote: (id: string) => void;
+  handleDuplicateQuote: (id: string, targetStatus?: QuoteStatus) => void;
   handleTogglePin: (id: string) => void;
   handleRenameQuote: (id: string, newName: string) => void;
   handleSaveTemplate: (templateName: string) => void;
@@ -179,7 +179,7 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [quotes, currentQuoteId, currentUser]);
 
-    const handleDuplicateQuote = useCallback((id: string) => {
+    const handleDuplicateQuote = useCallback((id: string, targetStatus: QuoteStatus = 'Draft') => {
         const quoteToDuplicate = quotes.find(q => q.id === id);
         if (!quoteToDuplicate || !currentUser) return;
 
@@ -188,14 +188,23 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           ...quoteToDuplicate,
           id: now.toString(),
           offerNumber: generateOfferNumber(quoteToDuplicate.quoteType, quotes),
-          version: 1, status: 'Draft', createdAt: now, createdBy: currentUser.displayName || currentUser.name, createdById: currentUser.id,
-          lastModified: now, isPinned: false,
+          version: 1, 
+          status: targetStatus, 
+          createdAt: now, 
+          createdBy: currentUser.displayName || currentUser.name, 
+          createdById: currentUser.id,
+          lastModified: now, 
+          isPinned: false,
           projectDetails: { ...quoteToDuplicate.projectDetails, projectName: `${quoteToDuplicate.projectDetails.projectName || 'مشروع جديد'} (نسخة)`, employeeName: currentUser.displayName || currentUser.name },
           approvedAt: undefined, printedAt: undefined, validUntil: undefined, approvedByClientAt: undefined,
           rejectedByClientAt: undefined, printLog: [], history: [],
         };
         setQuotes(prev => [...prev, newQuote]);
-        setCurrentQuoteId(newQuote.id);
+        
+        // Only select it if it's a draft or actively editable state immediately
+        if (targetStatus === 'Draft' || targetStatus === 'Under Revision') {
+            setCurrentQuoteId(newQuote.id);
+        }
     }, [quotes, currentUser]);
 
     const handleTogglePin = useCallback((id: string) => {

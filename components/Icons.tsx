@@ -1,5 +1,7 @@
 
-import React from 'react';
+import React, { 
+  ComponentProps 
+} from 'react';
 import { 
   BrickWall, 
   Droplets, 
@@ -51,7 +53,14 @@ import {
   Archive,
   LogOut,
   Users,
-  DollarSign
+  DollarSign,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Truck,
+  AlertCircle,
+  Calendar,
+  FileSignature
 } from 'lucide-react';
 
 interface IconProps {
@@ -108,9 +117,9 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'lightbulb': return <Lightbulb className={className} size={size} />;
     case 'bath': return <Bath className={className} size={size} />;
     case 'sofa': return <Sofa className={className} size={size} />;
-    case 'window': return <DoorOpen className={className} size={size} />; // Using DoorOpen for window as a placeholder
+    case 'window': return <DoorOpen className={className} size={size} />; 
 
-    // New Icons
+    // General Icons
     case 'home': return <Home className={className} size={size} />;
     case 'archive': return <Archive className={className} size={size} />;
     case 'log-out': return <LogOut className={className} size={size} />;
@@ -119,6 +128,15 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'circle': return <Circle className={className} size={size} />;
     case 'square': return <Square className={className} size={size} />;
     case 'check-square': return <CheckSquare className={className} size={size} />;
+
+    // Contract Management Icons
+    case 'wallet': return <Wallet className={className} size={size} />;
+    case 'trending-up': return <TrendingUp className={className} size={size} />;
+    case 'trending-down': return <TrendingDown className={className} size={size} />;
+    case 'truck': return <Truck className={className} size={size} />;
+    case 'alert': return <AlertCircle className={className} size={size} />;
+    case 'calendar': return <Calendar className={className} size={size} />;
+    case 'contract': return <FileSignature className={className} size={size} />;
     
     default: return <Layers className={className} size={size} />;
   }

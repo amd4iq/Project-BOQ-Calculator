@@ -8,10 +8,11 @@ interface QuoteTypeSelectorProps {
   onSelect: (type: QuoteType) => void;
   onGoToArchive: () => void;
   onGoToSettings: () => void;
+  onGoToContracts: () => void;
 }
 
-export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect, onGoToArchive, onGoToSettings }) => {
-  const { logout } = useAuth();
+export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect, onGoToArchive, onGoToSettings, onGoToContracts }) => {
+  const { logout, currentUser } = useAuth();
 
   return (
     <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center p-8 text-white">
@@ -53,6 +54,16 @@ export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect, 
 
       <footer className="absolute bottom-8 left-8 right-8 flex flex-col items-center gap-4">
         <div className="flex items-center gap-3">
+             {currentUser?.role === 'admin' && (
+                <button
+                    onClick={onGoToContracts}
+                    className="flex items-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 hover:text-white py-2 px-4 rounded-xl font-bold text-sm transition-all border border-indigo-500/30"
+                >
+                    <Icon name="briefcase" size={16} />
+                    العقود والمشاريع
+                </button>
+            )}
+            <div className="w-px h-6 bg-slate-700 mx-2 hidden md:block"></div>
             <button
                 onClick={onGoToArchive}
                 className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white py-2 px-4 rounded-xl font-bold text-sm transition-all"

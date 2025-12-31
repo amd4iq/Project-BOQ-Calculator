@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { QuoteStatus } from '../../types';
 import { Icon } from '../Icons';
@@ -19,6 +20,10 @@ const getStatusInfo = (status: QuoteStatus) => {
       return { text: 'منتهي الصلاحية', color: 'rose', icon: 'x' };
     case 'Contract Archived':
       return { text: 'عقد مؤرشف', color: 'indigo', icon: 'archive' };
+    case 'Contract Signed':
+      return { text: 'تم التعاقد', color: 'indigo', icon: 'contract' };
+    case 'Under Revision':
+      return { text: 'قيد المراجعة', color: 'blue', icon: 'pencil' };
     default:
       return { text: status, color: 'slate', icon: 'settings' };
   }
@@ -50,11 +55,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, validUntil }) 
     rose: 'bg-rose-100 text-rose-800 border-rose-200',
     slate: 'bg-slate-100 text-slate-800 border-slate-200',
     indigo: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    blue: 'bg-blue-100 text-blue-800 border-blue-200',
   };
 
   return (
-    <div className={`inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border shadow-sm ${colors[color]}`}>
-      <Icon name={icon} size={14} />
+    <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-lg border shadow-sm whitespace-nowrap ${colors[color]}`}>
+      <Icon name={icon} size={12} />
       <span>{text}</span>
       {status === 'Printed - Pending Client Approval' && validUntil && (
           <Countdown expiry={validUntil} />

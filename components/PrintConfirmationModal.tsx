@@ -35,13 +35,6 @@ export const PrintConfirmationModal: React.FC<PrintConfirmationModalProps> = ({ 
                 <Icon name="check" size={18} />
                 نعم، اعتمد واطبع
             </button>
-            <button
-                onClick={onOpenSettings}
-                className="w-full text-center px-6 py-3 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-100 border border-slate-200 transition-colors flex items-center justify-center gap-2 text-sm"
-            >
-                 <Icon name="settings" size={16} />
-                إعدادات طباعة هذا العرض
-            </button>
              <button
                 onClick={onClose}
                 className="w-full text-center px-6 py-2 text-slate-400 font-bold rounded-xl hover:bg-slate-100 transition-colors text-xs"

@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { SavedQuote } from '../../types';
 import { Icon } from '../Icons';
-import { VersionViewerModal } from './VersionViewerModal';
 
 interface PrintLogModalProps {
   quote: SavedQuote | null;
@@ -11,15 +10,13 @@ interface PrintLogModalProps {
 }
 
 export const PrintLogModal: React.FC<PrintLogModalProps> = ({ quote, isOpen, onClose }) => {
-  const [viewingSnapshot, setViewingSnapshot] = useState<Omit<SavedQuote, 'history'> | null>(null);
 
   if (!isOpen || !quote) return null;
 
   const printLog = quote.printLog || [];
 
   return (
-    <>
-      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:hidden">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:hidden">
         <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           
           {/* Header */}
@@ -51,7 +48,6 @@ export const PrintLogModal: React.FC<PrintLogModalProps> = ({ quote, isOpen, onC
                               <th className="text-right p-3 font-bold">المستخدم</th>
                               <th className="text-right p-3 font-bold">التاريخ والوقت</th>
                               <th className="text-center p-3 font-bold">النسخة</th>
-                              <th className="text-center p-3 font-bold">الإجراءات</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -66,23 +62,6 @@ export const PrintLogModal: React.FC<PrintLogModalProps> = ({ quote, isOpen, onC
                                   </td>
                                   <td className="p-3 text-center font-bold font-mono text-slate-600">
                                       V{entry.version}
-                                  </td>
-                                  <td className="p-3 text-center">
-                                    {quote.history?.some(h => h.version === entry.version) ? (
-                                        <button
-                                            onClick={() => {
-                                                const snapshotEntry = quote.history?.find(h => h.version === entry.version);
-                                                if (snapshotEntry) {
-                                                    setViewingSnapshot(snapshotEntry.snapshot);
-                                                }
-                                            }}
-                                            className="text-xs font-bold bg-white text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-400 transition-colors"
-                                        >
-                                            عرض النسخة
-                                        </button>
-                                    ) : (
-                                        <span className="text-xs text-slate-400">--</span>
-                                    )}
                                   </td>
                               </tr>
                           ))}
@@ -111,12 +90,5 @@ export const PrintLogModal: React.FC<PrintLogModalProps> = ({ quote, isOpen, onC
           </div>
         </div>
       </div>
-      
-      <VersionViewerModal 
-        isOpen={!!viewingSnapshot}
-        onClose={() => setViewingSnapshot(null)}
-        quoteSnapshot={viewingSnapshot}
-      />
-    </>
   );
 };

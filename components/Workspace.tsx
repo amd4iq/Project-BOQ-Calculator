@@ -181,14 +181,23 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
 
           {/* LEFT SIDE */}
           <div className="flex items-center gap-4">
-              <button
-                  onClick={() => setIsPrintConfirmationOpen(true)}
-                  disabled={isReadOnly}
-                  className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-primary-500/20 transition-all active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                  <Icon name="printer" size={18} />
-                  <span>اعتماد وطباعة</span>
-              </button>
+              {isReadOnly ? (
+                  <button
+                      onClick={() => window.print()}
+                      className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-slate-500/20 transition-all active:scale-95"
+                  >
+                      <Icon name="printer" size={18} />
+                      <span>طباعة (أرشيف)</span>
+                  </button>
+              ) : (
+                  <button
+                      onClick={() => setIsPrintConfirmationOpen(true)}
+                      className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-primary-500/20 transition-all active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                      <Icon name="printer" size={18} />
+                      <span>اعتماد وطباعة</span>
+                  </button>
+              )}
               
               <div className="flex items-center gap-2">
                   <button
