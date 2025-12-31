@@ -284,7 +284,14 @@ export const SuppliersTab: React.FC<SuppliersTabProps> = ({ contractId }) => {
             if (filterProject !== 'All') {
                 filtered = filtered.filter(e => e.contractId === filterProject);
             }
-            return filtered.sort((a, b) => b.date - a.date);
+            return filtered.sort((a, b) => {
+                if (b.date !== a.date) {
+                    return b.date - a.date;
+                }
+                const aTime = Number(a.id.substring(4));
+                const bTime = Number(b.id.substring(4));
+                return bTime - aTime;
+            });
         }, [supplierExpenses, filterDate, filterStatus, filterProject]);
 
         const totalTransactions = supplierExpenses.filter(e => e.category !== 'DebtPayment').reduce((sum, e) => sum + e.amount, 0);

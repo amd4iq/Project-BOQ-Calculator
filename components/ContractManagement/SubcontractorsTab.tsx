@@ -601,7 +601,14 @@ export const SubcontractorsTab: React.FC<SubcontractorsTabProps> = ({ contractId
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {subExpenses.slice().reverse().map(exp => {
+                                {subExpenses.sort((a, b) => {
+                                    if (b.date !== a.date) {
+                                        return b.date - a.date;
+                                    }
+                                    const aTime = Number(a.id.substring(4));
+                                    const bTime = Number(b.id.substring(4));
+                                    return bTime - aTime;
+                                }).map(exp => {
                                     const paidAmount = exp.paidAmount || 0;
                                     const remaining = exp.paymentMethod === 'Credit' ? exp.amount - paidAmount : 0;
                                     
@@ -732,7 +739,7 @@ export const SubcontractorsTab: React.FC<SubcontractorsTabProps> = ({ contractId
                         </div>
                     )}
 
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mx-6 mb-6">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mx-6 mb-6">
                         <table className="w-full text-sm">
                             <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                                 <tr>

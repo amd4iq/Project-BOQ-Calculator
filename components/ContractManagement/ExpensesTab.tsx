@@ -277,7 +277,15 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
             if (filterDateTo) matchesDate = matchesDate && expDate <= new Date(filterDateTo).setHours(0,0,0,0);
 
             return matchesSearch && matchesCategory && matchesBeneficiaryType && matchesPayment && matchesDate;
-        }).sort((a, b) => b.date - a.date);
+        }).sort((a, b) => {
+            if (b.date !== a.date) {
+                return b.date - a.date;
+            }
+            // Fallback to ID-based timestamp sort for items on the same day
+            const aTime = Number(a.id.substring(4));
+            const bTime = Number(b.id.substring(4));
+            return bTime - aTime;
+        });
     }, [expenses, searchTerm, filterCategory, filterBeneficiaryType, filterPaymentStatus, filterDateFrom, filterDateTo, suppliers, workers, subcontractors]);
 
     const resetFilters = () => {

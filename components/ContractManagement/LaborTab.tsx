@@ -468,7 +468,14 @@ export const LaborTab: React.FC<LaborTabProps> = ({ contractId }) => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {workerExpenses.slice().reverse().map(exp => {
+                                {workerExpenses.sort((a, b) => {
+                                    if (b.date !== a.date) {
+                                        return b.date - a.date;
+                                    }
+                                    const aTime = Number(a.id.substring(4));
+                                    const bTime = Number(b.id.substring(4));
+                                    return bTime - aTime;
+                                }).map(exp => {
                                     const paidAmount = exp.paidAmount || 0;
                                     const remaining = exp.paymentMethod === 'Credit' ? exp.amount - paidAmount : 0;
                                     
@@ -600,7 +607,7 @@ export const LaborTab: React.FC<LaborTabProps> = ({ contractId }) => {
                     )}
 
                     {/* Table View */}
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mx-6 mb-6">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm mx-6 mb-6">
                         <table className="w-full text-sm">
                             <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                                 <tr>
