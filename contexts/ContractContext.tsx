@@ -35,7 +35,7 @@ interface ContractContextType {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateExpense: (id: string, updates: Partial<Expense>) => void;
   deleteExpense: (id: string) => void;
-  payPartialDebt: (originalExpense: Expense, amountToPay: number, paymentDate: number, attachmentUrl?: string) => void;
+  payPartialDebt: (originalExpense: Expense, amountToPay: number, paymentDate: number, attachmentUrl?: string, receiptNumber?: string, receiptDate?: number) => void;
   
   addPayment: (payment: Omit<ReceivedPayment, 'id'>) => void;
   deletePayment: (id: string) => void;
@@ -202,7 +202,7 @@ export const ContractProvider: React.FC<{ children: ReactNode }> = ({ children }
       setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
-  const payPartialDebt = (originalExpense: Expense, amountToPay: number, paymentDate: number, attachmentUrl?: string) => {
+  const payPartialDebt = (originalExpense: Expense, amountToPay: number, paymentDate: number, attachmentUrl?: string, receiptNumber?: string, receiptDate?: number) => {
       setExpenses(prev => prev.map(e => {
           if (e.id === originalExpense.id) {
               const currentPaid = e.paidAmount || 0;
@@ -212,7 +212,9 @@ export const ContractProvider: React.FC<{ children: ReactNode }> = ({ children }
                   id: `hist-${Date.now()}`,
                   date: paymentDate,
                   amount: amountToPay,
-                  attachmentUrl: attachmentUrl
+                  attachmentUrl: attachmentUrl,
+                  receiptNumber: receiptNumber,
+                  receiptDate: receiptDate
               };
 
               return {

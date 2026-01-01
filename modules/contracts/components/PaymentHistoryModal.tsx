@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Expense } from '../../../core/types.ts';
+import { Expense, PaymentHistoryEntry } from '../../../core/types.ts';
 import { Icon } from '../../../components/Icons.tsx';
 import { formatCurrency } from '../../../core/utils/format.ts';
 
@@ -8,12 +8,29 @@ interface PaymentHistoryModalProps {
     expense: Expense | null;
     isOpen: boolean;
     onClose: () => void;
+    onPreviewImage: (data: { url: string; receiptNumber?: string; receiptDate?: number; }) => void;
 }
 
-export const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ expense, isOpen, onClose }) => {
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+export const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ expense, isOpen, onClose, onPreviewImage }) => {
 
     if (!isOpen || !expense) return null;
+
+    const allEntries: PaymentHistoryEntry[] = [...(expense.paymentHistory || [])];
+    
+    const recordedPaidAmount = expense.paymentHistory?.reduce((sum, h) => sum + h.amount, 0) || 0;
+    const initialPaymentAmount = (expense.paidAmount || 0) - recordedPaidAmount;
+
+    if (initialPaymentAmount > 0) {
+        allEntries.unshift({
+            id: 'initial-payment',
+            date: expense.date,
+            amount: initialPaymentAmount,
+            attachmentUrl: expense.attachmentUrl,
+            receiptNumber: expense.receiptNumber,
+            receiptDate: expense.receiptDate,
+            note: 'دفعة أولية عند التسجيل'
+        });
+    }
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
@@ -45,49 +62,43 @@ export const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({ expens
                         </div>
                     </div>
 
-                    {!expense.paymentHistory || expense.paymentHistory.length === 0 ? (
+                    {allEntries.length === 0 ? (
                         <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl">
-                            <p className="text-slate-400 text-sm font-bold">لا يوجد سجل تفصيلي للدفعات السابقة</p>
-                            {expense.paidAmount && expense.paidAmount > 0 && (
-                                <p className="text-xs text-slate-400 mt-1">تم تسجيل المدفوعات كإجمالي فقط قبل تفعيل نظام السجل.</p>
-                            )}
+                            <p className="text-slate-400 text-sm font-bold">لا توجد دفعات مسجلة لهذا المصروف.</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">الدفعات المسجلة</h4>
-                            {expense.paymentHistory.slice().reverse().map((entry, idx) => (
-                                <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between group hover:border-purple-200 transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-slate-100 text-slate-500 font-mono text-xs font-bold px-3 py-2 rounded-lg">
-                                            {new Date(entry.date).toLocaleDateString('ar-IQ')}
+                            {allEntries.slice().reverse().map(entry => (
+                                <div key={entry.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm group hover:border-purple-200 transition-colors">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-slate-100 text-slate-500 font-mono text-xs font-bold px-3 py-2 rounded-lg">
+                                                {new Date(entry.date).toLocaleDateString('ar-IQ')}
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-slate-800 font-mono text-lg">{formatCurrency(entry.amount)} <span className="text-xs font-normal text-slate-400">IQD</span></p>
+                                                {(entry.receiptNumber || entry.receiptDate) && (
+                                                    <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-4">
+                                                        {entry.receiptNumber && <span className="flex items-center gap-1 font-semibold"><Icon name="file-text" size={12}/> {entry.receiptNumber}</span>}
+                                                        {entry.receiptDate && <span className="flex items-center gap-1 font-semibold"><Icon name="calendar" size={12}/> {new Date(entry.receiptDate).toLocaleDateString('ar-IQ')}</span>}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-black text-slate-800 font-mono text-lg">{formatCurrency(entry.amount)} <span className="text-xs font-normal text-slate-400">IQD</span></p>
-                                        </div>
+                                        {entry.attachmentUrl && (
+                                            <button onClick={() => onPreviewImage({ url: entry.attachmentUrl!, receiptNumber: entry.receiptNumber, receiptDate: entry.receiptDate })} className="p-2 text-purple-500 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold">
+                                                <Icon name="image-plus" size={16} />
+                                                الوصل
+                                            </button>
+                                        )}
                                     </div>
-                                    {entry.attachmentUrl && (
-                                        <button onClick={() => setPreviewImage(entry.attachmentUrl!)} className="p-2 text-purple-500 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold">
-                                            <Icon name="image-plus" size={16} />
-                                            الوصل
-                                        </button>
-                                    )}
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
             </div>
-
-            {previewImage && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={() => setPreviewImage(null)}>
-                    <div className="relative max-w-4xl max-h-[90vh]">
-                        <img src={previewImage} alt="Receipt" className="max-w-full max-h-full rounded-lg shadow-2xl" />
-                        <button onClick={() => setPreviewImage(null)} className="absolute -top-4 -right-4 bg-white rounded-full p-2 text-black hover:bg-slate-200 shadow-lg">
-                            <Icon name="x" size={24} />
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

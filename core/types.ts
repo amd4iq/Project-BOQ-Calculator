@@ -212,6 +212,8 @@ export interface PaymentHistoryEntry {
     amount: number;
     attachmentUrl?: string;
     note?: string;
+    receiptNumber?: string;
+    receiptDate?: number;
 }
 
 export interface Expense {
@@ -230,6 +232,8 @@ export interface Expense {
   paymentMethod: 'Cash' | 'Credit';
   attachmentUrl?: string;
   notes?: string;
+  receiptNumber?: string;
+  receiptDate?: number;
 }
 
 export interface ReceivedPayment {

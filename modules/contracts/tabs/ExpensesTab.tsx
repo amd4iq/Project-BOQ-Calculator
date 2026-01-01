@@ -50,7 +50,7 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [menuPosition, setMenuPosition] = useState<{ top: number, left: number } | null>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [previewData, setPreviewData] = useState<{ url: string; receiptNumber?: string; receiptDate?: number; } | null>(null);
     
     const filterRef = useRef<HTMLDivElement>(null);
     const actionMenuRef = useRef<HTMLDivElement>(null);
@@ -133,10 +133,40 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
         }
     };
 
-    const handleConfirmPayment = (amount: number, date: string, attachmentUrl?: string) => {
+    const handleConfirmPayment = (amount: number, date: string, attachmentUrl?: string, receiptNumber?: string, receiptDate?: number) => {
         if (!selectedExpense) return;
-        payPartialDebt(selectedExpense, amount, new Date(date).getTime(), attachmentUrl);
+        payPartialDebt(selectedExpense, amount, new Date(date).getTime(), attachmentUrl, receiptNumber, receiptDate);
         setIsPayModalOpen(false);
+    };
+    
+    const handleDownloadImage = () => {
+        if (!previewData) return;
+    
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+    
+            // Draw a white background for transparent images
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+    
+            // Get the data URL as JPEG
+            const jpegUrl = canvas.toDataURL('image/jpeg', 0.9);
+    
+            // Create download link
+            const link = document.createElement('a');
+            link.href = jpegUrl;
+            link.download = `وصل-${previewData.receiptNumber || Date.now()}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        img.src = previewData.url;
     };
 
     const remainingDebt = selectedExpense ? selectedExpense.amount - (selectedExpense.paidAmount || 0) : 0;
@@ -229,7 +259,7 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
                         <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                             <tr>
                                 <th className="p-3 text-center w-12">#</th>
-                                {['التاريخ', 'الوصف', 'المستفيد', 'النوع', 'المبلغ الكلي', 'المدفوع', 'المتبقي', 'الحالة', 'الإجراءات'].map(h => <th key={h} className="p-3 text-right">{h}</th>)}
+                                {['التاريخ', 'الوصف', 'المستفيد', 'النوع', 'المبلغ الكلي', 'المدفوع / المتبقي', 'الحالة', 'الإجراءات'].map(h => <th key={h} className="p-3 text-right">{h}</th>)}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -242,9 +272,15 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
                                     <td className="p-3 text-xs text-slate-700">{exp.description}</td>
                                     <td className="p-3 text-xs text-slate-600"><div className="flex items-center gap-1.5">{renderBeneficiary(exp)}</div></td>
                                     <td className="p-3 text-xs font-medium text-slate-500">{translateCategory(exp.category)}</td>
-                                    <td className="p-3 font-mono text-slate-800">{formatCurrency(exp.amount)}</td>
-                                    <td className="p-3 font-mono text-emerald-600">{formatCurrency(exp.paidAmount || 0)}</td>
-                                    <td className="p-3 font-mono text-amber-600">{formatCurrency(remaining)}</td>
+                                    <td className="p-3 font-mono text-slate-800 text-right align-middle font-bold">{formatCurrency(exp.amount)}</td>
+                                    <td className="p-3 font-mono text-right align-middle">
+                                        <div>
+                                            <div className="font-bold text-emerald-600">{formatCurrency(exp.paidAmount || 0)}</div>
+                                            {exp.paymentMethod === 'Credit' && remaining > 0 && (
+                                                <div className="text-xs font-semibold text-amber-600">{formatCurrency(remaining)}</div>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-3 w-32">{renderStatusBadge(exp)}</td>
                                     <td className="p-3">
                                         <button onClick={(e) => handleMenuToggle(e, exp.id)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-md"><Icon name="settings" size={16}/></button>
@@ -269,7 +305,7 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
                                 <button onClick={() => handleOpenModal(selectedExpenseForMenu)} className="w-full text-right text-xs p-2 rounded hover:bg-slate-100 flex items-center gap-2"><Icon name="pencil" size={14}/>تعديل</button>
                                 {remaining > 0 && <button onClick={() => handleOpenPayModal(selectedExpenseForMenu)} className="w-full text-right text-xs p-2 rounded hover:bg-slate-100 flex items-center gap-2"><Icon name="wallet" size={14}/>تسجيل دفعة</button>}
                                 {(selectedExpenseForMenu.paidAmount || 0) > 0 && <button onClick={() => handleOpenHistoryModal(selectedExpenseForMenu)} className="w-full text-right text-xs p-2 rounded hover:bg-slate-100 flex items-center gap-2"><Icon name="file-text" size={14}/>عرض سجل الدفع</button>}
-                                {selectedExpenseForMenu.attachmentUrl && <button onClick={() => { setPreviewImage(selectedExpenseForMenu.attachmentUrl!); setOpenMenuId(null); }} className="w-full text-right text-xs p-2 rounded hover:bg-slate-100 flex items-center gap-2"><Icon name="image-plus" size={14}/>عرض الوصل</button>}
+                                {selectedExpenseForMenu.attachmentUrl && <button onClick={() => { setPreviewData({ url: selectedExpenseForMenu.attachmentUrl!, receiptNumber: selectedExpenseForMenu.receiptNumber, receiptDate: selectedExpenseForMenu.receiptDate }); setOpenMenuId(null); }} className="w-full text-right text-xs p-2 rounded hover:bg-slate-100 flex items-center gap-2"><Icon name="image-plus" size={14}/>عرض الوصل</button>}
                                 <div className="h-px bg-slate-100 my-1"></div>
                                 <button onClick={() => { if(window.confirm('متأكد؟')) deleteExpense(selectedExpenseForMenu.id); setOpenMenuId(null); }} className="w-full text-right text-xs p-2 rounded hover:bg-rose-50 text-rose-600 flex items-center gap-2"><Icon name="trash" size={14}/>حذف</button>
                             </>
@@ -281,8 +317,63 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
             {/* Modals */}
             <ExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} contractId={contract.id} expense={selectedExpense}/>
             <PaymentModal isOpen={isPayModalOpen} onClose={() => setIsPayModalOpen(false)} expense={selectedExpense} remainingAmount={remainingDebt} onConfirm={handleConfirmPayment} />
-            <PaymentHistoryModal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} expense={selectedExpense}/>
-            {previewImage && (<div className="fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4" onClick={() => setPreviewImage(null)}><img src={previewImage} alt="Attachment" className="max-w-full max-h-full rounded-lg shadow-2xl" /></div>)}
+            <PaymentHistoryModal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} expense={selectedExpense} onPreviewImage={(data) => setPreviewData(data)} />
+            
+            {/* Enhanced Image Preview */}
+            {previewData && (
+                <div className="fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4" onClick={() => setPreviewData(null)}>
+                    <div 
+                        className="bg-slate-50 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col md:flex-row overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Details and Actions container */}
+                        <div className="w-full md:w-64 lg:w-72 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-200 bg-white order-1 md:order-1">
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Icon name="image-plus" size={24} className="text-indigo-600"/>
+                                    <h3 className="font-bold text-lg text-slate-800">معاينة الوصل</h3>
+                                </div>
+                                <div className="space-y-4 text-sm mt-6">
+                                    {previewData.receiptNumber && (
+                                        <div className="flex items-start gap-3">
+                                           <div className="bg-slate-100 p-1.5 rounded-md mt-0.5"><Icon name="file-text" size={16} className="text-slate-500"/></div>
+                                           <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">رقم الوصل</p>
+                                                <p className="font-bold text-slate-700 font-mono text-base">{previewData.receiptNumber}</p>
+                                           </div>
+                                        </div>
+                                    )}
+                                    {previewData.receiptDate && (
+                                        <div className="flex items-start gap-3">
+                                           <div className="bg-slate-100 p-1.5 rounded-md mt-0.5"><Icon name="calendar" size={16} className="text-slate-500"/></div>
+                                           <div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">تاريخ الوصل</p>
+                                                <p className="font-bold text-slate-700 font-mono">{new Date(previewData.receiptDate).toLocaleDateString('ar-IQ')}</p>
+                                           </div>
+                                        </div>
+                                    )}
+                                    {!previewData.receiptNumber && !previewData.receiptDate && (
+                                        <p className="text-xs text-slate-400 text-center bg-slate-50 p-3 rounded-lg">لا توجد تفاصيل إضافية لهذا الوصل.</p>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <button
+                                onClick={handleDownloadImage}
+                                className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold px-4 py-3 rounded-xl shadow-lg shadow-primary-100 transition-all active:scale-95 text-sm mt-6"
+                            >
+                                <Icon name="download" size={18} />
+                                حفظ الصورة (JPG)
+                            </button>
+                        </div>
+                        
+                        {/* Image container */}
+                        <div className="flex-1 md:flex-[3] bg-slate-800/80 flex items-center justify-center p-4 order-2 md:order-2">
+                            <img src={previewData.url} alt="Attachment" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

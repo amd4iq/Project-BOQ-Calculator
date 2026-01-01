@@ -9,19 +9,24 @@ interface PaymentModalProps {
     remainingAmount: number;
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (amount: number, date: string, attachmentUrl?: string) => void;
+    onConfirm: (amount: number, date: string, attachmentUrl?: string, receiptNumber?: string, receiptDate?: number) => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ expense, remainingAmount, isOpen, onClose, onConfirm }) => {
     const [amount, setAmount] = useState<number | ''>('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [attachment, setAttachment] = useState<string | undefined>(undefined);
+    const [receiptNumber, setReceiptNumber] = useState('');
+    const [receiptDate, setReceiptDate] = useState('');
 
     useEffect(() => {
         if (isOpen && expense) {
             setAmount(remainingAmount > 0 ? remainingAmount : '');
             setDate(new Date().toISOString().split('T')[0]);
-            setAttachment(undefined);
+            // Pre-fill with previous data
+            setAttachment(expense.attachmentUrl);
+            setReceiptNumber(expense.receiptNumber || '');
+            setReceiptDate(expense.receiptDate ? new Date(expense.receiptDate).toISOString().split('T')[0] : '');
         }
     }, [isOpen, expense, remainingAmount]);
 
@@ -37,7 +42,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ expense, remainingAm
     const handleConfirm = () => {
         const numAmount = Number(amount);
         if (numAmount > 0 && numAmount <= remainingAmount) {
-            onConfirm(numAmount, date, attachment);
+            onConfirm(numAmount, date, attachment, receiptNumber, receiptDate ? new Date(receiptDate).getTime() : undefined);
         }
     }
 
@@ -62,17 +67,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ expense, remainingAm
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 text-sm font-mono bg-slate-50 focus:bg-white"/>
                     <div className="relative">
                         <input type="number" value={amount} max={remainingAmount} onChange={e => setAmount(Number(e.target.value))} className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 font-bold text-lg text-slate-800 font-mono pl-16" autoFocus/>
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">IQD</span>
                     </div>
-                    <label className="cursor-pointer flex items-center justify-center gap-2 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-emerald-400 text-slate-500 p-3 rounded-xl group">
-                        <Icon name={attachment ? "check" : "image-plus"} size={18} className={`${attachment ? "text-emerald-500" : "group-hover:text-emerald-500"}`} />
-                        <span className={`text-xs font-bold ${attachment ? "text-emerald-600" : "group-hover:text-emerald-600"}`}>{attachment ? "تم ارفاق صورة" : "ارفع صورة الوصل"}</span>
-                        <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <input type="text" value={receiptNumber} onChange={e => setReceiptNumber(e.target.value)} placeholder="رقم الوصل" className="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 text-xs font-bold bg-slate-50 focus:bg-white" />
+                        <input type="date" value={receiptDate} onChange={e => setReceiptDate(e.target.value)} className="w-full p-2 border border-slate-200 rounded-lg outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 text-xs font-mono bg-slate-50 focus:bg-white" />
+                    </div>
+                    <div>
+                        <label className="cursor-pointer flex items-center justify-center gap-2 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-emerald-400 text-slate-500 p-3 rounded-xl group">
+                            <Icon name={attachment ? "check" : "image-plus"} size={18} className={`${attachment ? "text-emerald-500" : "group-hover:text-emerald-500"}`} />
+                            <span className={`text-xs font-bold ${attachment ? "text-emerald-600" : "group-hover:text-emerald-600"}`}>{attachment ? "تم ارفاق صورة" : "ارفع صورة الوصل"}</span>
+                            <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                        </label>
+                        {attachment && (
+                            <button onClick={() => setAttachment(undefined)} className="w-full text-center text-xs text-rose-600 hover:underline mt-1.5">
+                                إزالة الصورة
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex gap-3 mt-8">

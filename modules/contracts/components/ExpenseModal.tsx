@@ -25,8 +25,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, con
     const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Credit'>('Cash');
     const [paidAmount, setPaidAmount] = useState<number | ''>('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [notes, setNotes] = useState('');
     const [attachment, setAttachment] = useState<string | undefined>(undefined);
+    const [receiptNumber, setReceiptNumber] = useState<string>('');
+    const [receiptDate, setReceiptDate] = useState<string>('');
     const [error, setError] = useState('');
     const [localContractId, setLocalContractId] = useState(contractId || '');
 
@@ -49,8 +50,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, con
                 setPaymentMethod(expense.paymentMethod);
                 setPaidAmount(expense.paidAmount || '');
                 setDate(new Date(expense.date).toISOString().split('T')[0]);
-                setNotes(expense.notes || '');
                 setAttachment(expense.attachmentUrl);
+                setReceiptNumber(expense.receiptNumber || '');
+                setReceiptDate(expense.receiptDate ? new Date(expense.receiptDate).toISOString().split('T')[0] : '');
                 setLocalContractId(expense.contractId);
             } else {
                 // Reset form for new entry
@@ -75,13 +77,20 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, con
                 setPaymentMethod('Cash');
                 setPaidAmount('');
                 setDate(new Date().toISOString().split('T')[0]);
-                setNotes('');
                 setAttachment(undefined);
-                setLocalContractId(contractId || '');
+                setReceiptNumber('');
+                setReceiptDate('');
+                setLocalContractId(contractId || contracts[0]?.id || '');
             }
             setError('');
         }
-    }, [isOpen, expense, isEditing, suppliers, workers, subcontractors, contractId, beneficiary]);
+    }, [isOpen, expense, isEditing, suppliers, workers, subcontractors, contractId, beneficiary, contracts]);
+
+    useEffect(() => {
+        if (paymentMethod === 'Cash') {
+            setPaidAmount(amount);
+        }
+    }, [amount, paymentMethod]);
     
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -117,7 +126,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, con
             subcontractorId: beneficiaryType === 'Subcontractor' ? beneficiaryId : undefined,
             paidAmount: paymentMethod === 'Cash' ? numAmount : Number(paidAmount) || 0,
             attachmentUrl: attachment,
-            notes,
+            notes: '',
+            receiptNumber: receiptNumber || undefined,
+            receiptDate: receiptDate ? new Date(receiptDate).getTime() : undefined,
         };
 
         if (isEditing && expense) {
@@ -132,18 +143,27 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, con
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-slate-800">{isEditing ? 'تعديل المصروف' : 'إضافة مصروف جديد'}</h2>
+            <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="p-4 flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-indigo-100 text-indigo-600 p-3 rounded-full">
+                            <Icon name="trending-down" size={24}/>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-slate-800">{isEditing ? 'تعديل المصروف' : 'إضافة مصروف جديد'}</h2>
+                            <p className="text-sm text-slate-500">تسجيل عملية صرف جديدة للمشروع</p>
+                        </div>
+                    </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><Icon name="x" size={24} /></button>
                 </div>
-                <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-                    {error && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</p>}
+                
+                <div className="p-4 space-y-3 overflow-y-auto">
+                    {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100 font-bold">{error}</div>}
                     
                     {!contractId && (
                         <div>
                             <label className="text-sm font-semibold text-slate-700 mb-1 block">المشروع</label>
-                            <select value={localContractId} onChange={e => setLocalContractId(e.target.value)} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" disabled={isEditing}>
+                            <select value={localContractId} onChange={e => setLocalContractId(e.target.value)} className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" disabled={isEditing}>
                                 <option value="" disabled>-- اختر المشروع --</option>
                                 {contracts.map(c => <option key={c.id} value={c.id}>{c.projectDetails.projectName}</option>)}
                             </select>
@@ -152,78 +172,92 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, con
 
                     <div>
                         <label className="text-sm font-semibold text-slate-700 mb-1 block">وصف المصروف</label>
-                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="مثال: شراء اسمنت..." className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" />
+                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="مثال: شراء اسمنت..." className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-semibold text-slate-700 mb-1 block">نوع المصروف</label>
-                            <select value={category} onChange={e => setCategory(e.target.value as any)} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                <option value="Material">مواد</option>
-                                <option value="Labor">أجور</option>
-                                <option value="Transport">نقل</option>
-                                <option value="Other">أخرى</option>
-                            </select>
+                            <label className="text-sm font-semibold text-slate-700 mb-1 block">المبلغ الإجمالي</label>
+                            <input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} placeholder="0" className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200 font-bold" />
                         </div>
                          <div>
                             <label className="text-sm font-semibold text-slate-700 mb-1 block">تاريخ العملية</label>
-                            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" />
+                            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" />
                         </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-semibold text-slate-700 mb-1 block">المستفيد</label>
-                            <select value={beneficiaryType} onChange={e => { setBeneficiaryType(e.target.value as any); setBeneficiaryId(''); }} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" disabled={!!beneficiary}>
-                                <option value="Supplier">مورد</option><option value="Worker">عامل</option><option value="Subcontractor">مقاول ثانوي</option><option value="Other">آخر</option>
+                            <label className="text-sm font-semibold text-slate-700 mb-1 block">نوع المصروف</label>
+                            <select value={category} onChange={e => setCategory(e.target.value as any)} className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200">
+                                <option value="Material">مواد</option><option value="Labor">أجور</option><option value="Transport">نقل</option><option value="Other">أخرى</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-sm font-semibold text-slate-700 mb-1 block">اسم المستفيد</label>
-                            {beneficiaryType !== 'Other' ? (
-                                <select value={beneficiaryId} onChange={e => setBeneficiaryId(e.target.value)} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" disabled={!!beneficiary}>
-                                    <option value="" disabled>-- اختر --</option>
-                                    {(beneficiaryLists[beneficiaryType] || []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            <label className="text-sm font-semibold text-slate-700 mb-1 block">المستفيد</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <select value={beneficiaryType} onChange={e => { setBeneficiaryType(e.target.value as any); setBeneficiaryId(''); }} className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" disabled={!!beneficiary}>
+                                    <option value="Supplier">مورد</option><option value="Worker">عامل</option><option value="Subcontractor">مقاول ثانوي</option><option value="Other">آخر</option>
                                 </select>
-                            ) : (
-                                <input type="text" value={beneficiaryName} onChange={e => setBeneficiaryName(e.target.value)} placeholder="اكتب اسم المستفيد" className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" />
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <label className="text-sm font-semibold text-slate-700 mb-2 block">تفاصيل الدفع</label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} placeholder="المبلغ الإجمالي" className="w-full p-3 rounded-xl bg-white border border-slate-200 font-bold" />
-                            <div className="flex gap-2">
-                               <button onClick={() => setPaymentMethod('Cash')} className={`flex-1 p-3 rounded-xl border-2 font-bold text-xs ${paymentMethod === 'Cash' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'}`}>نقدي</button>
-                               <button onClick={() => setPaymentMethod('Credit')} className={`flex-1 p-3 rounded-xl border-2 font-bold text-xs ${paymentMethod === 'Credit' ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600'}`}>دين (آجل)</button>
+                                {beneficiaryType !== 'Other' ? (
+                                    <select value={beneficiaryId} onChange={e => setBeneficiaryId(e.target.value)} className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" disabled={!!beneficiary}>
+                                        <option value="" disabled>-- اختر --</option>
+                                        {(beneficiaryLists[beneficiaryType] || []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                    </select>
+                                ) : (
+                                    <input type="text" value={beneficiaryName} onChange={e => setBeneficiaryName(e.target.value)} placeholder="اكتب اسم المستفيد" className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" />
+                                )}
                             </div>
                         </div>
-                        {paymentMethod === 'Credit' && (
-                             <div className="mt-3 animate-in fade-in duration-300">
-                                <input type="number" value={paidAmount} onChange={e => setPaidAmount(Number(e.target.value))} placeholder="المبلغ المدفوع مبدئياً (اختياري)" className="w-full p-2 rounded-lg bg-white border border-slate-200 text-sm" />
-                            </div>
-                        )}
                     </div>
                     
-                    <div>
-                        <label className="text-sm font-semibold text-slate-700 mb-1 block">ملاحظات</label>
-                        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-semibold text-slate-700 mb-1 block">طريقة الدفع</label>
+                            <div className="flex gap-2">
+                               <button onClick={() => setPaymentMethod('Cash')} className={`flex-1 py-2.5 px-4 rounded-xl border-2 font-bold text-sm ${paymentMethod === 'Cash' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'}`}>نقدي</button>
+                               <button onClick={() => setPaymentMethod('Credit')} className={`flex-1 py-2.5 px-4 rounded-xl border-2 font-bold text-sm ${paymentMethod === 'Credit' ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-600'}`}>دين (آجل)</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-sm font-semibold text-slate-700 mb-1 block">المبلغ المدفوع مبدئياً (اختياري)</label>
+                            <input 
+                                type="number" 
+                                value={paidAmount} 
+                                onChange={e => setPaidAmount(Number(e.target.value))} 
+                                placeholder="0" 
+                                className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed" 
+                                disabled={paymentMethod === 'Cash'}
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <label className="cursor-pointer flex items-center justify-center gap-2 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-400 text-slate-500 p-3 rounded-xl transition-all group flex-1">
-                            <Icon name={attachment ? "check" : "image-plus"} size={18} className={`transition-colors ${attachment ? "text-indigo-500" : "group-hover:text-indigo-500"}`} />
-                            <span className={`text-xs font-bold transition-colors ${attachment ? "text-indigo-600" : "group-hover:text-indigo-600"}`}>{attachment ? "تم ارفاق صورة" : "ارفع صورة الوصل"}</span>
-                            <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                        </label>
-                        {attachment && <button onClick={() => setAttachment(undefined)} className="p-3 bg-rose-50 text-rose-600 rounded-xl"><Icon name="trash" size={18}/></button>}
+                    <div className="border-t border-slate-100 pt-3">
+                        <label className="text-xs font-bold text-slate-400 mb-1 block">تفاصيل الوصل (اختياري)</label>
+                        <div className="grid grid-cols-3 gap-4">
+                             <div>
+                                <label className="text-sm font-semibold text-slate-700 mb-1 block">رقم الوصل</label>
+                                <input type="text" value={receiptNumber} onChange={e => setReceiptNumber(e.target.value)} placeholder="رقم الوصل" className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-semibold text-slate-700 mb-1 block">تاريخه</label>
+                                <input type="date" value={receiptDate} onChange={e => setReceiptDate(e.target.value)} className="w-full p-2.5 text-sm rounded-xl bg-slate-50 border border-slate-200" />
+                            </div>
+                             <div>
+                                <label className="text-sm font-semibold text-slate-700 mb-1 block">صورة الوصل</label>
+                                <label className="cursor-pointer h-[46px] flex items-center justify-center gap-2 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-400 text-slate-500 p-2.5 rounded-xl group">
+                                    <Icon name={attachment ? "check" : "image-plus"} size={18} className={`${attachment ? "text-indigo-500" : "group-hover:text-indigo-500"}`} />
+                                    <span className={`text-sm font-bold ${attachment ? "text-indigo-600" : "group-hover:text-indigo-600"}`}>{attachment ? "تم الإرفاق" : "ارفع صورة"}</span>
+                                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-6 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-xl">إلغاء</button>
-                    <button onClick={handleSubmit} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">حفظ المصروف</button>
+
+                <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 flex-shrink-0">
+                    <button onClick={onClose} className="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-xl">إلغاء</button>
+                    <button onClick={handleSubmit} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700">حفظ المصروف</button>
                 </div>
             </div>
         </div>
