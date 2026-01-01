@@ -60,7 +60,9 @@ import {
   Truck,
   AlertCircle,
   Calendar,
-  FileSignature
+  FileSignature,
+  Filter,
+  ArrowLeft
 } from 'lucide-react';
 
 interface IconProps {
@@ -77,6 +79,7 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'calculator': return <Calculator className={className} size={size} />;
     case 'chevron': return <ChevronDown className={className} size={size} />;
     case 'check': return <CheckCircle2 className={className} size={size} />;
+    case 'check-circle': return <CheckCircle2 className={className} size={size} />;
     case 'check-simple': return <Check className={className} size={size} />;
     case 'settings': return <Settings className={className} size={size} />;
     case 'layers': return <Layers className={className} size={size} />;
@@ -111,6 +114,8 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'pin': return <Pin className={className} size={size} />;
     case 'search': return <Search className={className} size={size} />;
     case 'dollar-sign': return <DollarSign className={className} size={size} />;
+    case 'filter': return <Filter className={className} size={size} />;
+    case 'arrow-left': return <ArrowLeft className={className} size={size} />;
     
     // Finishes Icons
     case 'blinds': return <Blinds className={className} size={size} />;

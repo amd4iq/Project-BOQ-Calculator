@@ -37,8 +37,6 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
     const [filters, setFilters] = useState({
         searchTerm: '',
         status: '',
-        dateFrom: '',
-        dateTo: '',
         quoteType: '',
     });
     
@@ -79,8 +77,6 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
 
         if (filters.status) quotes = quotes.filter(q => q.status === filters.status);
         if (filters.quoteType) quotes = quotes.filter(q => q.quoteType === filters.quoteType);
-        if (filters.dateFrom) quotes = quotes.filter(q => (q.printedAt || q.createdAt) >= new Date(filters.dateFrom).getTime());
-        if (filters.dateTo) quotes = quotes.filter(q => (q.printedAt || q.createdAt) <= new Date(filters.dateTo).setHours(23, 59, 59, 999));
         
         return quotes.sort((a,b) => (b.lastModified || b.createdAt) - (a.lastModified || a.createdAt));
     }, [allQuotes, activeSection, filters]);

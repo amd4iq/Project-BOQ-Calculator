@@ -1,15 +1,23 @@
 
-import React from 'react';
-import { useContract } from '../../../contexts/ContractContext.tsx';
-import { Icon } from '../../../components/Icons.tsx';
+import React, { useState } from 'react';
+import { SuppliersList } from './suppliers/SuppliersList';
+import { SupplierProfile } from './suppliers/SupplierProfile';
 
 export const SuppliersTab: React.FC<{ contractId?: string }> = ({ contractId }) => {
-    const { suppliers } = useContract();
-    // Logic to filter suppliers based on contractId if provided
+    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+
+    if (selectedSupplierId) {
+        return (
+            <SupplierProfile 
+                supplierId={selectedSupplierId} 
+                onBack={() => setSelectedSupplierId(null)}
+            />
+        );
+    }
+
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-black text-slate-800">الموردين</h1>
-            {/* Display list of suppliers */}
-        </div>
+        <SuppliersList 
+            onSelectSupplier={setSelectedSupplierId}
+        />
     );
 };

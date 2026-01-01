@@ -31,7 +31,11 @@ const App: React.FC = () => {
   
   if (viewMode === 'settings') {
     if (auth.currentUser.role === 'admin') {
-      return <AdminSettingsPage onClose={() => setViewMode('workspace')} />;
+      return <AdminSettingsPage 
+                onClose={() => setViewMode('workspace')} 
+                onGoToArchive={() => setViewMode('archive')}
+                onGoToContracts={() => setViewMode('contracts')}
+             />;
     }
     return <UserProfilePage onClose={() => setViewMode('workspace')} />;
   }

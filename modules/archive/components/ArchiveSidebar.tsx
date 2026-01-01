@@ -9,8 +9,6 @@ interface ArchiveSidebarProps {
     filters: {
         searchTerm: string;
         status: string;
-        dateFrom: string;
-        dateTo: string;
         quoteType: string;
     };
     onFilterChange: (filters: any) => void;
@@ -28,28 +26,44 @@ const NavButton: React.FC<{
     label: string;
     isActive: boolean;
     onClick: () => void;
-    colorClass?: string;
     indicatorCount?: number;
-}> = ({ icon, label, isActive, onClick, colorClass = "text-slate-600", indicatorCount }) => (
+}> = ({ icon, label, isActive, onClick, indicatorCount }) => (
     <button
         onClick={onClick}
-        className={`flex items-center justify-between w-full text-right px-4 py-3 rounded-xl transition-all font-bold group ${
-            isActive ? 'bg-primary-600 text-white shadow-lg shadow-primary-200' : `${colorClass} hover:bg-slate-100`
+        className={`flex items-center justify-between w-full text-right px-3 py-2.5 rounded-lg transition-colors group text-sm ${
+            isActive 
+            ? 'bg-indigo-50 text-indigo-700 font-extrabold' 
+            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-semibold'
         }`}
     >
         <div className="flex items-center gap-3">
-            <Icon name={icon} size={20} />
+            <Icon name={icon} size={18} className={isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-500 transition-colors'} />
             <span>{label}</span>
         </div>
-        {indicatorCount && indicatorCount > 0 ? (
+        {indicatorCount && indicatorCount > 0 && (
              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black animate-in zoom-in ${
                  isActive 
-                 ? 'bg-white text-primary-600' 
-                 : 'bg-blue-100 text-blue-600 group-hover:bg-blue-200'
+                 ? 'bg-white text-indigo-600 shadow-sm' 
+                 : 'bg-slate-200 text-slate-600 group-hover:bg-slate-300'
              }`}>
                  {indicatorCount}
              </span>
-        ) : null}
+        )}
+    </button>
+);
+
+
+const IconButton: React.FC<{ icon: string; onClick: () => void; title: string; isDestructive?: boolean; }> = ({ icon, onClick, title, isDestructive = false }) => (
+    <button
+        onClick={onClick}
+        title={title}
+        className={`flex-1 flex items-center justify-center py-2 rounded-lg font-bold transition-all active:scale-95 border shadow-sm ${
+            isDestructive 
+            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-100'
+            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+        }`}
+    >
+        <Icon name={icon} size={18} />
     </button>
 );
 
@@ -104,26 +118,23 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
     };
 
     const resetFilters = () => {
-        onFilterChange({ searchTerm: '', status: '', dateFrom: '', dateTo: '', quoteType: '' });
+        onFilterChange({ searchTerm: '', status: '', quoteType: '' });
     };
 
     return (
-        <aside className="w-80 bg-white border-l border-slate-200 flex flex-col h-full shadow-lg print:hidden z-50 relative">
+        <aside className="w-72 bg-white border-l border-slate-200 flex flex-col h-full shadow-lg print:hidden z-50 relative">
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center gap-3 bg-white">
-                 <div className="bg-primary-50 p-2 rounded-xl text-primary-600">
-                    <Icon name="archive" size={24} />
+            <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+                 <div className="bg-indigo-600 text-white p-2 rounded-lg shadow-md shadow-indigo-200">
+                    <Icon name="archive" size={20} />
                  </div>
-                 <div>
-                    <h2 className="font-black text-xl text-slate-800">الأرشيف</h2>
-                    <p className="text-xs text-slate-400">سجل العروض والمشاريع</p>
-                 </div>
+                 <h2 className="font-black text-lg text-slate-800">الأرشيف</h2>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar scrollbar-gutter-stable">
+            <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar scrollbar-gutter-stable">
                 {/* Navigation Section */}
-                <nav className="space-y-1.5">
-                    <div className="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">العروض الجارية</div>
+                <nav className="space-y-1">
+                    <div className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">العروض الجارية</div>
                     <NavButton 
                         icon="layers"
                         label="عروض الهيكل"
@@ -138,34 +149,29 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
                         onClick={() => onSectionChange('finishes')}
                         indicatorCount={revisionCounts?.finishes}
                     />
-                    
-                    <div className="my-3 border-t border-slate-50"></div>
-                    
-                    <div className="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">السجلات التاريخية</div>
+                </nav>
+                <nav className="space-y-1">
+                    <div className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">السجلات</div>
                     <NavButton 
                         icon="file-text"
                         label="الأرشيف النهائي"
                         isActive={activeSection === 'final'}
                         onClick={() => onSectionChange('final')}
-                        colorClass="text-slate-800"
                     />
                 </nav>
 
                 {/* Search & Filters Section */}
-                <div className="border-t border-slate-100 pt-4">
+                <div className="border-t border-slate-100 pt-3">
                     <button 
                         onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors ${isSearchExpanded ? 'bg-slate-50 text-slate-800' : 'text-slate-500 hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${isSearchExpanded ? 'bg-slate-50' : ''}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <Icon name="search" size={18} />
-                            <h3 className="font-bold text-sm">البحث والفلترة</h3>
-                        </div>
+                        <h3 className="font-bold text-sm text-slate-700">البحث والفلترة</h3>
                         <Icon name="chevron" size={16} className={`transition-transform duration-200 ${isSearchExpanded ? 'rotate-180' : ''}`} />
                     </button>
                     
                     {isSearchExpanded && (
-                        <div className="p-3 bg-slate-50 rounded-xl mt-2 border border-slate-200 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                        <div className="p-3 bg-slate-50 rounded-lg mt-2 border border-slate-200 space-y-3 animate-in slide-in-from-top-2 duration-200">
                              <CompactFilterInput
                                 label="كلمات البحث"
                                 type="text"
@@ -200,22 +206,6 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
                                 <option value="Contract Signed">تم التعاقد</option>
                                 <option value="Under Revision">قيد المراجعة</option>
                             </CompactFilterInput>
-                             <div className="grid grid-cols-2 gap-2">
-                                 <CompactFilterInput
-                                    label="من تاريخ"
-                                    type="date"
-                                    name="dateFrom"
-                                    value={filters.dateFrom}
-                                    onChange={handleInputChange}
-                                />
-                                 <CompactFilterInput
-                                    label="إلى تاريخ"
-                                    type="date"
-                                    name="dateTo"
-                                    value={filters.dateTo}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
                             <button 
                                 onClick={resetFilters}
                                 className="w-full text-center text-[10px] font-bold text-slate-400 hover:text-red-500 py-1 transition-colors"
@@ -227,62 +217,24 @@ export const ArchiveSidebar: React.FC<ArchiveSidebarProps> = ({
                 </div>
             </div>
 
-            {/* Redesigned Footer Section with all removed buttons */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
-                
-                <div className="flex gap-2 items-stretch">
-                    <button
-                        onClick={onClose}
-                        className={`flex items-center justify-center bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition-all active:scale-95 shadow-md shadow-slate-300 ${currentUser?.role === 'admin' ? 'p-3.5' : 'flex-1 py-3.5 gap-2'}`}
-                        title="الرئيسية"
-                    >
-                        <Icon name="home" size={20} />
-                        {currentUser?.role !== 'admin' && (
-                            <span>الرئيسية</span>
-                        )}
-                    </button>
-
+            <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-3">
+                <button
+                    onClick={onClose}
+                    className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg font-bold transition-all active:scale-95 text-sm"
+                >
+                    <Icon name="home" size={18} />
+                    العودة للرئيسية
+                </button>
+                <div className="flex items-center gap-2">
                     {currentUser?.role === 'admin' && (
-                        <button
-                            onClick={onGoToContracts}
-                            className="flex-1 group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-violet-600 text-white p-0.5 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
-                        >
-                            <div className="relative bg-transparent hover:bg-white/10 transition-colors rounded-[10px] h-full flex items-center justify-center px-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-1 bg-white/20 rounded-lg text-white">
-                                        <Icon name="briefcase" size={16} />
-                                    </div>
-                                    <span className="font-bold text-xs whitespace-nowrap">إدارة المشاريع</span>
-                                </div>
-                            </div>
-                        </button>
+                        <IconButton icon="briefcase" onClick={onGoToContracts} title="إدارة العقود" />
                     )}
+                    <IconButton icon="settings" onClick={onGoToSettings} title="الإعدادات" />
+                    <IconButton icon="printer" onClick={() => window.print()} title="طباعة" />
+                    <IconButton icon="log-out" onClick={logout} title="خروج" isDestructive={true} />
                 </div>
-                
-                <div className="grid grid-cols-3 gap-2">
-                    <button
-                        onClick={onGoToSettings}
-                        className="flex items-center justify-center bg-white hover:bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-slate-200 shadow-sm"
-                        title="الملف الشخصي والإعدادات"
-                    >
-                        <Icon name="user" size={18} />
-                    </button>
-                    
-                    <button
-                        onClick={() => window.print()}
-                        className="flex items-center justify-center bg-white hover:bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-slate-200 shadow-sm"
-                        title="طباعة سجل الأرشيف"
-                    >
-                        <Icon name="printer" size={20} />
-                    </button>
-
-                    <button
-                        onClick={logout}
-                        className="flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-rose-100 shadow-sm"
-                        title="تسجيل الخروج"
-                    >
-                        <Icon name="log-out" size={20} />
-                    </button>
+                 <div className="pt-3 border-t border-slate-200 text-center">
+                    <p className="text-sm font-bold text-slate-700">{currentUser?.displayName}</p>
                 </div>
             </div>
         </aside>

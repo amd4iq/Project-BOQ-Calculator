@@ -229,6 +229,7 @@ export interface Expense {
   subcontractorId?: string;
   paymentMethod: 'Cash' | 'Credit';
   attachmentUrl?: string;
+  notes?: string;
 }
 
 export interface ReceivedPayment {

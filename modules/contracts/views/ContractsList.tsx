@@ -22,18 +22,35 @@ const NavButton: React.FC<{
     label: string;
     isActive: boolean;
     onClick: () => void;
-    colorClass?: string;
-}> = ({ icon, label, isActive, onClick, colorClass = "text-slate-600" }) => (
+}> = ({ icon, label, isActive, onClick }) => (
     <button
         onClick={onClick}
-        className={`flex items-center gap-3 w-full text-right px-4 py-3 rounded-xl transition-all font-bold group ${
-            isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : `${colorClass} hover:bg-slate-100`
+        className={`flex items-center gap-3 w-full text-right px-3 py-2.5 rounded-lg transition-colors group text-sm ${
+            isActive 
+            ? 'bg-indigo-50 text-indigo-700 font-extrabold' 
+            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-semibold'
         }`}
     >
-        <Icon name={icon} size={20} />
+        <Icon name={icon} size={18} className={isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-500 transition-colors'} />
         <span>{label}</span>
     </button>
 );
+
+
+const IconButton: React.FC<{ icon: string; onClick: () => void; title: string; isDestructive?: boolean; }> = ({ icon, onClick, title, isDestructive = false }) => (
+    <button
+        onClick={onClick}
+        title={title}
+        className={`flex-1 flex items-center justify-center py-2 rounded-lg font-bold transition-all active:scale-95 border shadow-sm ${
+            isDestructive 
+            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-100'
+            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+        }`}
+    >
+        <Icon name={icon} size={18} />
+    </button>
+);
+
 
 const StatCard: React.FC<{ 
     title: string; 
@@ -75,9 +92,6 @@ export const ContractsList: React.FC<ContractsListProps> = ({ onSelectContract, 
 
     const globalStats = getGlobalFinancials();
     
-    const activeContractsCount = contracts.filter(c => c.status === 'Active').length;
-    const completedContractsCount = contracts.filter(c => c.status === 'Completed').length;
-
     const getStatusColor = (status: Contract['status']) => {
         switch(status) {
             case 'Active': return 'bg-emerald-100 text-emerald-700';
@@ -100,22 +114,19 @@ export const ContractsList: React.FC<ContractsListProps> = ({ onSelectContract, 
 
     return (
         <div className="flex h-screen bg-slate-100 overflow-hidden" dir="rtl">
-            <aside className="w-80 bg-white border-l border-slate-200 flex flex-col h-full shadow-lg z-20 relative">
+            <aside className="w-72 bg-white border-l border-slate-200 flex flex-col h-full shadow-lg z-20 relative">
                 {/* Header */}
-                <div className="p-5 border-b border-slate-100 flex items-center gap-3 bg-white">
-                    <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl">
-                        <Icon name="briefcase" size={24} />
+                <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="bg-indigo-600 text-white p-2 rounded-lg shadow-md shadow-indigo-200">
+                        <Icon name="briefcase" size={20} />
                     </div>
-                    <div>
-                        <h2 className="font-black text-xl text-slate-800">إدارة العقود</h2>
-                        <p className="text-xs text-slate-400">المشاريع والموردين</p>
-                    </div>
+                    <h2 className="font-black text-lg text-slate-800">إدارة العقود</h2>
                 </div>
                 
                 {/* Navigation */}
-                <div className="p-4 space-y-6 flex-1 overflow-y-auto custom-scrollbar scrollbar-gutter-stable">
-                    <nav className="space-y-1.5">
-                        <div className="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">المشاريع والمالية</div>
+                <div className="p-3 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+                     <nav className="space-y-1">
+                        <div className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">المشاريع</div>
                         <NavButton 
                             icon="layers"
                             label="قائمة المشاريع"
@@ -124,29 +135,28 @@ export const ContractsList: React.FC<ContractsListProps> = ({ onSelectContract, 
                         />
                         <NavButton 
                             icon="pie-chart"
-                            label="نظرة عامة (المالية)"
+                            label="المالية العامة"
                             isActive={viewMode === 'dashboard'}
                             onClick={() => setViewMode('dashboard')}
                         />
                     </nav>
-
-                    <nav className="space-y-1.5">
-                        <div className="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">الموارد البشرية والموردين</div>
+                     <nav className="space-y-1">
+                        <div className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">الموارد</div>
                         <NavButton 
                             icon="truck"
-                            label="قاعدة الموردين"
+                            label="الموردين"
                             isActive={viewMode === 'suppliers'}
                             onClick={() => setViewMode('suppliers')}
                         />
                         <NavButton 
                             icon="building"
-                            label="المقاولين الثانويين"
+                            label="المقاولين"
                             isActive={viewMode === 'subcontractors'}
                             onClick={() => setViewMode('subcontractors')}
                         />
                         <NavButton 
-                            icon="user"
-                            label="العمال والأجور"
+                            icon="users"
+                            label="العمالة"
                             isActive={viewMode === 'labor'}
                             onClick={() => setViewMode('labor')}
                         />
@@ -154,60 +164,24 @@ export const ContractsList: React.FC<ContractsListProps> = ({ onSelectContract, 
                 </div>
 
                 {/* Footer Buttons Group */}
-                <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
-                    <div className="flex gap-2 items-stretch">
-                        <button
-                            onClick={onClose}
-                            className={`flex items-center justify-center bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition-all active:scale-95 shadow-md shadow-slate-300 ${currentUser?.role === 'admin' ? 'p-3.5' : 'flex-1 py-3.5 gap-2'}`}
-                            title="الرئيسية"
-                        >
-                            <Icon name="home" size={20} />
-                            {currentUser?.role !== 'admin' && (
-                                <span>الرئيسية</span>
-                            )}
-                        </button>
-
+                <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-3">
+                    <button
+                        onClick={onClose}
+                        className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg font-bold transition-all active:scale-95 text-sm"
+                    >
+                        <Icon name="home" size={18} />
+                        العودة للرئيسية
+                    </button>
+                    <div className="flex items-center gap-2">
                         {currentUser?.role === 'admin' && (
-                            <button
-                                onClick={onGoToArchive}
-                                className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-0.5 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95"
-                            >
-                                <div className="relative bg-transparent hover:bg-white/10 transition-colors rounded-[10px] h-full flex items-center justify-center px-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-1 bg-white/20 rounded-lg text-white">
-                                            <Icon name="archive" size={16} />
-                                        </div>
-                                        <span className="font-bold text-xs whitespace-nowrap">الأرشيف السحابي</span>
-                                    </div>
-                                </div>
-                            </button>
+                            <IconButton icon="archive" onClick={onGoToArchive} title="الأرشيف" />
                         )}
+                        <IconButton icon="settings" onClick={onGoToSettings} title="الإعدادات" />
+                        <IconButton icon="printer" onClick={() => window.print()} title="طباعة" />
+                        <IconButton icon="log-out" onClick={logout} title="خروج" isDestructive={true} />
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                        <button
-                            onClick={onGoToSettings}
-                            className="flex items-center justify-center bg-white hover:bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-slate-200 shadow-sm"
-                            title="الإعدادات"
-                        >
-                            <Icon name="user" size={18} />
-                        </button>
-                        
-                        <button
-                            onClick={() => window.print()}
-                            className="flex items-center justify-center bg-white hover:bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-slate-200 shadow-sm"
-                            title="طباعة"
-                        >
-                            <Icon name="printer" size={20} />
-                        </button>
-
-                        <button
-                            onClick={logout}
-                            className="flex items-center justify-center bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-rose-100 shadow-sm"
-                            title="خروج"
-                        >
-                            <Icon name="log-out" size={20} />
-                        </button>
+                    <div className="pt-3 border-t border-slate-200 text-center">
+                        <p className="text-sm font-bold text-slate-700">{currentUser?.displayName}</p>
                     </div>
                 </div>
             </aside>
