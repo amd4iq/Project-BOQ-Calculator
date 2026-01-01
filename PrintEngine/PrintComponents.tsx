@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { SavedQuote, CompanyInfo } from '../types';
+// FIX: Corrected import path for types
+import { SavedQuote, CompanyInfo } from '../core/types';
 
 // New Document Header
 export const PrintLayoutHeader: React.FC<{ quote: SavedQuote; companyInfo: CompanyInfo }> = ({ quote, companyInfo }) => (

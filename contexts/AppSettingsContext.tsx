@@ -1,8 +1,8 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { CompanyInfo, PrintSettings, BasePrices, Category } from '../types';
-import * as structureConstants from '../constants/structure';
-import * as finishesConstants from '../constants/finishes';
+import { CompanyInfo, PrintSettings, BasePrices, Category } from '../core/types.ts';
+import * as structureConstants from '../core/constants/structure.ts';
+import * as finishesConstants from '../core/constants/finishes.ts';
 
 const APP_SETTINGS_STORAGE_KEY = 'construction_app_settings_v1';
 

@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Category, ProjectDetails, QuoteType, SelectionState, CategorySelection } from '../types';
-import { formatCurrency } from '../utils/format';
-import { Icon } from './Icons';
-import { QualityIndicator } from './ConstructionOffers/QualityIndicator';
+import { Category, ProjectDetails, QuoteType, SelectionState, CategorySelection } from '../core/types.ts';
+import { formatCurrency } from '../core/utils/format.ts';
+import { Icon } from './Icons.tsx';
+import { QualityIndicator } from './ConstructionOffers/QualityIndicator.tsx';
 
 interface PriceBreakdownProps {
   categories: Category[];

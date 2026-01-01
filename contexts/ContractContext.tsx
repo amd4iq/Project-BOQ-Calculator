@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode, useMemo } from 'react';
-import { Contract, Supplier, Expense, ReceivedPayment, SavedQuote, Worker, Subcontractor, SubcontractorAgreement, PaymentHistoryEntry } from '../types';
-import { calculateQuoteTotals } from '../utils/calculations';
+import { Contract, Supplier, Expense, ReceivedPayment, SavedQuote, Worker, Subcontractor, SubcontractorAgreement, PaymentHistoryEntry } from '../core/types';
+import { calculateQuoteTotals } from '../core/utils/calculations';
 
 interface ContractContextType {
   contracts: Contract[];
@@ -202,12 +202,10 @@ export const ContractProvider: React.FC<{ children: ReactNode }> = ({ children }
       setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
-  // NEW LOGIC: Update original expense instead of creating a new DebtPayment row
   const payPartialDebt = (originalExpense: Expense, amountToPay: number, paymentDate: number, attachmentUrl?: string) => {
       setExpenses(prev => prev.map(e => {
           if (e.id === originalExpense.id) {
               const currentPaid = e.paidAmount || 0;
-              // Ensure we don't overpay (logic should be handled in UI, but safe guard here)
               const newPaid = Math.min(e.amount, currentPaid + amountToPay);
               
               const newHistoryItem: PaymentHistoryEntry = {
@@ -233,98 +231,88 @@ export const ContractProvider: React.FC<{ children: ReactNode }> = ({ children }
       setReceivedPayments(prev => [...prev, newPayment]);
   };
   const deletePayment = (id: string) => {
-      setReceivedPayments(prev => prev.filter(p => p.id !== id));
+    setReceivedPayments(prev => prev.filter(p => p.id !== id));
   };
-
-  // --- Helpers ---
-  const getContractExpenses = (contractId: string) => expenses.filter(e => e.contractId === contractId);
-  const getContractPayments = (contractId: string) => receivedPayments.filter(p => p.contractId === contractId);
   
-  // Calculate Balance: Sum(Credit Expenses - Paid Amount)
-  const calculateBalance = (idField: 'supplierId' | 'workerId' | 'subcontractorId', id: string) => {
-      return expenses
-          .filter(exp => exp[idField] === id && exp.paymentMethod === 'Credit')
-          .reduce((totalDebt, exp) => totalDebt + (exp.amount - (exp.paidAmount || 0)), 0);
+  // --- Helpers ---
+  const getContractExpenses = (contractId: string) => {
+    return expenses.filter(e => e.contractId === contractId);
+  };
+  
+  const getContractPayments = (contractId: string) => {
+    return receivedPayments.filter(p => p.contractId === contractId);
   };
 
-  const getSupplierBalance = (id: string) => calculateBalance('supplierId', id);
-  const getWorkerBalance = (id: string) => calculateBalance('workerId', id);
-  const getSubcontractorBalance = (id: string) => calculateBalance('subcontractorId', id);
+  const getSupplierBalance = (supplierId: string) => {
+    const supplierExpenses = expenses.filter(e => e.supplierId === supplierId);
+    const totalOwed = supplierExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalPaid = supplierExpenses.reduce((sum, e) => sum + (e.paidAmount || (e.paymentMethod === 'Cash' ? e.amount : 0)), 0);
+    return totalOwed - totalPaid;
+  };
+  
+  const getWorkerBalance = (workerId: string) => {
+    const workerExpenses = expenses.filter(e => e.workerId === workerId);
+    const totalOwed = workerExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalPaid = workerExpenses.reduce((sum, e) => sum + (e.paidAmount || (e.paymentMethod === 'Cash' ? e.amount : 0)), 0);
+    return totalOwed - totalPaid;
+  };
+
+  const getSubcontractorBalance = (subId: string) => {
+    const subExpenses = expenses.filter(e => e.subcontractorId === subId);
+    const totalOwed = subExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalPaid = subExpenses.reduce((sum, e) => sum + (e.paidAmount || (e.paymentMethod === 'Cash' ? e.amount : 0)), 0);
+    return totalOwed - totalPaid;
+  };
 
   const getContractFinancials = (contractId: string) => {
-      const contract = contracts.find(c => c.id === contractId);
-      if (!contract) return { totalReceived: 0, totalSpent: 0, profit: 0, progress: 0 };
+    const contract = contracts.find(c => c.id === contractId);
+    if (!contract) return { totalReceived: 0, totalSpent: 0, profit: 0, progress: 0 };
 
-      const myPayments = receivedPayments.filter(p => p.contractId === contractId);
-      const myExpenses = expenses.filter(e => e.contractId === contractId);
-
-      const totalReceived = myPayments.reduce((sum, p) => sum + p.amount, 0);
-      
-      // Total Cost = Sum of all expenses (Cost basis)
-      const totalSpent = myExpenses
-        .filter(e => e.category !== 'DebtPayment') 
-        .reduce((sum, e) => sum + e.amount, 0);
-
-      const profit = totalReceived - totalSpent;
-      const progress = (totalReceived / contract.totalContractValue) * 100;
-
-      return { totalReceived, totalSpent, profit, progress };
+    const payments = getContractPayments(contractId);
+    const contractExpenses = getContractExpenses(contractId);
+    
+    const totalReceived = payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalSpent = contractExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const profit = totalReceived - totalSpent;
+    const progress = contract.totalContractValue > 0 ? (totalReceived / contract.totalContractValue) * 100 : 0;
+    
+    return { totalReceived, totalSpent, profit, progress };
   };
 
   const getGlobalFinancials = () => {
-      const totalReceived = receivedPayments.reduce((sum, p) => sum + p.amount, 0);
-      
-      // Total Cash Spent Calculation:
-      // 1. Immediate Cash Purchases
-      const directCash = expenses
-          .filter(e => e.paymentMethod === 'Cash' && e.category !== 'DebtPayment')
-          .reduce((sum, e) => sum + e.amount, 0);
-      
-      // 2. Paid Amounts on Credit Purchases
-      const debtPaid = expenses
-          .filter(e => e.paymentMethod === 'Credit')
-          .reduce((sum, e) => sum + (e.paidAmount || 0), 0);
+    const totalReceived = receivedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalCashSpent = expenses.filter(e => e.paymentMethod === 'Cash').reduce((sum, e) => sum + e.amount, 0);
+    const creditExpenses = expenses.filter(e => e.paymentMethod === 'Credit');
+    const totalDebt = creditExpenses.reduce((sum, e) => sum + (e.amount - (e.paidAmount || 0)), 0);
 
-      // 3. Old DebtPayment records (Legacy support)
-      const oldDebtPayments = expenses
-          .filter(e => e.category === 'DebtPayment')
-          .reduce((sum, e) => sum + e.amount, 0);
+    return { totalReceived, totalCashSpent, totalDebt };
+  };
 
-      const totalCashSpent = directCash + debtPaid + oldDebtPayments;
-
-      // Total Debt Remaining
-      const totalCreditPurchases = expenses
-          .filter(e => e.paymentMethod === 'Credit')
-          .reduce((sum, e) => sum + e.amount, 0);
-      
-      const totalDebt = totalCreditPurchases - (debtPaid + oldDebtPayments); // Total Credit - Total Paid Back
-
-      return { totalReceived, totalCashSpent, totalDebt };
+  const value = {
+      contracts, suppliers, workers, subcontractors, subAgreements, expenses, receivedPayments,
+      createContractFromQuote, updateContractStatus, updateContractDetails,
+      addSupplier, deleteSupplier, updateSupplier,
+      addWorker, deleteWorker, updateWorker,
+      addSubcontractor, deleteSubcontractor, updateSubcontractor,
+      saveSubAgreement, getSubAgreement,
+      addExpense, updateExpense, deleteExpense, payPartialDebt,
+      addPayment, deletePayment,
+      getContractExpenses, getContractPayments,
+      getSupplierBalance, getWorkerBalance, getSubcontractorBalance,
+      getContractFinancials, getGlobalFinancials,
   };
 
   return (
-    <ContractContext.Provider value={{
-        contracts, suppliers, workers, subcontractors, subAgreements, expenses, receivedPayments,
-        createContractFromQuote, updateContractStatus, updateContractDetails,
-        addSupplier, deleteSupplier, updateSupplier,
-        addWorker, deleteWorker, updateWorker,
-        addSubcontractor, deleteSubcontractor, updateSubcontractor,
-        saveSubAgreement, getSubAgreement,
-        addExpense, updateExpense, deleteExpense, payPartialDebt,
-        addPayment, deletePayment,
-        getContractExpenses, getContractPayments, 
-        getSupplierBalance, getWorkerBalance, getSubcontractorBalance,
-        getContractFinancials, getGlobalFinancials
-    }}>
-        {children}
+    <ContractContext.Provider value={value}>
+      {children}
     </ContractContext.Provider>
   );
 };
 
 export const useContract = () => {
-  const context = useContext(ContractContext);
-  if (context === undefined) {
-    throw new Error('useContract must be used within a ContractProvider');
-  }
-  return context;
+    const context = useContext(ContractContext);
+    if (context === undefined) {
+        throw new Error('useContract must be used within a ContractProvider');
+    }
+    return context;
 };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { 
   QuoteType, 
@@ -13,9 +12,12 @@ import {
   QuoteStatus,
   PrintLogEntry,
   HistoryEntry,
-} from '../types';
-import { getConstantsForQuoteType } from '../constants';
-import { generateOfferNumber } from '../utils/numbering';
+// FIX: Corrected import path for types
+} from '../core/types';
+// FIX: Corrected import path for constants
+import { getConstantsForQuoteType } from '../core/constants';
+// FIX: Corrected import path for numbering utility
+import { generateOfferNumber } from '../core/utils/numbering';
 import { useAuth } from '../components/Auth/AuthContext';
 import { useAppSettings } from './AppSettingsContext';
 
@@ -40,6 +42,7 @@ interface QuoteContextType {
   handleSaveTemplate: (templateName: string) => void;
   handleApplyTemplate: (templateId: string) => void;
   handleDeleteTemplate: (templateId: string) => void;
+  forceDeleteQuote: (id: string) => void;
 }
 
 const QuoteContext = createContext<QuoteContextType | undefined>(undefined);
@@ -179,6 +182,14 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
     }, [quotes, currentQuoteId, currentUser]);
 
+    const forceDeleteQuote = useCallback((id: string) => {
+        const newQuotes = quotes.filter(q => q.id !== id);
+        setQuotes(newQuotes);
+        if (currentQuoteId === id) {
+            setCurrentQuoteId(newQuotes.length > 0 ? newQuotes[0].id : null);
+        }
+    }, [quotes, currentQuoteId]);
+
     const handleDuplicateQuote = useCallback((id: string, targetStatus: QuoteStatus = 'Draft') => {
         const quoteToDuplicate = quotes.find(q => q.id === id);
         if (!quoteToDuplicate || !currentUser) return;
@@ -201,7 +212,6 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
         setQuotes(prev => [...prev, newQuote]);
         
-        // Only select it if it's a draft or actively editable state immediately
         if (targetStatus === 'Draft' || targetStatus === 'Under Revision') {
             setCurrentQuoteId(newQuote.id);
         }
@@ -238,7 +248,7 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         quotes, templates, currentQuote, currentQuoteId, isReadOnly, canEditSpecs, handleCreateQuote,
         updateCurrentQuote, updateQuoteStatus, handleSelectQuote, setCurrentQuoteId, handleDeleteQuote,
         handleDuplicateQuote, handleTogglePin, handleRenameQuote, handleSaveTemplate, handleApplyTemplate,
-        handleDeleteTemplate,
+        handleDeleteTemplate, forceDeleteQuote,
     };
 
     return (

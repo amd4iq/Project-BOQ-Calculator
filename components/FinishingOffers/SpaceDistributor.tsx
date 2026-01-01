@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Space } from '../../types';
+// FIX: Corrected import path for types
+import { Space } from '../../core/types';
 import { Icon } from '../Icons';
 
 interface SpaceDistributorProps {

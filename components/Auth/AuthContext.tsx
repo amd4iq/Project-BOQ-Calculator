@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { User } from '../../types';
-import { defaultUsers } from './users';
+import { User } from '../../core/types.ts';
+import { defaultUsers } from './users.ts';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -17,22 +17,28 @@ const AUTH_STORAGE_KEY = 'auth_current_user_id';
 const USERS_STORAGE_KEY = 'app_users';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(() => {
     const savedUsers = localStorage.getItem(USERS_STORAGE_KEY);
     return savedUsers ? JSON.parse(savedUsers) : defaultUsers;
   });
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   }, [users]);
   
   useEffect(() => {
-    const savedUserId = localStorage.getItem(AUTH_STORAGE_KEY);
+    // تم التعديل هنا: إذا لم يوجد مستخدم مسجل، سيتم اختيار الأدمن (user-1) تلقائياً للتجربة
+    const savedUserId = localStorage.getItem(AUTH_STORAGE_KEY) || 'user-1';
     if (savedUserId) {
       const user = users.find(u => u.id === savedUserId);
       if (user) {
         setCurrentUser(user);
+        // حفظ المعرف في الـ storage لضمان استمرارية الجلسة الافتراضية
+        if (!localStorage.getItem(AUTH_STORAGE_KEY)) {
+            localStorage.setItem(AUTH_STORAGE_KEY, user.id);
+        }
       }
     }
   }, [users]);

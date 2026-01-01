@@ -1,11 +1,13 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Category, ProjectDetails, AreaRow, StandardSpec, PaymentStage } from '../types';
+// FIX: Corrected import path for types
+import { Category, ProjectDetails, AreaRow, StandardSpec, PaymentStage } from '../core/types';
 import { useAuth } from './Auth/AuthContext';
 import { useAppSettings } from '../contexts/AppSettingsContext';
 import { useQuote } from '../contexts/QuoteContext';
-import { calculateQuoteTotals } from '../utils/calculations';
-import { downloadJSON, downloadCSV } from '../utils/export';
+// FIX: Corrected import path for calculations utility
+import { calculateQuoteTotals } from '../core/utils/calculations';
+// FIX: Corrected import path for export utility
+import { downloadJSON, downloadCSV } from '../core/utils/export';
 
 // Components
 import { QuoteSidebar } from './QuoteSidebar';

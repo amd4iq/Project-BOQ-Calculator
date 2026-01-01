@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { PrintSettings } from '../../types';
+// FIX: Corrected import path for types
+import { PrintSettings } from '../../core/types';
 import { Icon } from '../Icons';
 import { useAppSettings } from '../../contexts/AppSettingsContext';
 

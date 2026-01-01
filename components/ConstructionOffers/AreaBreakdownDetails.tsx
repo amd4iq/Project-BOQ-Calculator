@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { AreaRow } from '../../types';
+// FIX: Corrected import path for types
+import { AreaRow } from '../../core/types';
 import { Icon } from '../Icons';
 
 const calculateRowArea = (row: AreaRow): number => {

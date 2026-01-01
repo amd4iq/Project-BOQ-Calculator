@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { Category, SelectionState, CategorySelection, QuoteType } from '../../types';
+// FIX: Corrected import path for types
+import { Category, SelectionState, CategorySelection, QuoteType } from '../../core/types';
 import { Icon } from '../Icons';
 
 interface QualityIndicatorProps {

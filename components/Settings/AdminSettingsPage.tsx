@@ -45,7 +45,7 @@ export const AdminSettingsPage: React.FC<AdminSettingsPageProps> = ({ onClose })
             <p className="text-xs text-slate-400">لوحة تحكم المدير</p>
           </div>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-gutter-stable">
             <NavButton icon="users" label="إدارة المستخدمين" isActive={activeTab === 'users'} onClick={() => setActiveTab('users')} />
             <NavButton icon="layers" label="إدارة المواصفات" isActive={activeTab === 'specs'} onClick={() => setActiveTab('specs')} />
             <NavButton icon="printer" label="إعدادات الطباعة" isActive={activeTab === 'print'} onClick={() => setActiveTab('print')} />
@@ -63,7 +63,7 @@ export const AdminSettingsPage: React.FC<AdminSettingsPageProps> = ({ onClose })
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-8 scrollbar-gutter-stable">
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'specs' && <SpecsManagement />}
         {activeTab === 'print' && <PrintDefaultsManagement />}

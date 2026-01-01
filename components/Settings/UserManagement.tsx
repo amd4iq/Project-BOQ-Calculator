@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
-import { User } from '../../types';
+// FIX: Corrected import path for types
+import { User } from '../../core/types';
 import { useAuth } from '../Auth/AuthContext';
 import { Icon } from '../Icons';
 import { UserModal } from './UserModal';

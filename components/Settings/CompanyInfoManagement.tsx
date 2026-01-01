@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { CompanyInfo } from '../../types';
+// FIX: Corrected import path for types
+import { CompanyInfo } from '../../core/types';
 import { Icon } from '../Icons';
 import { useAppSettings } from '../../contexts/AppSettingsContext';
 
@@ -40,7 +40,8 @@ export const CompanyInfoManagement: React.FC = () => {
             ...prev,
             companyInfo: {
                 ...prev.companyInfo,
-                [e.target.name]: e.target.value
+                // FIX: Added type assertion to safely handle dynamic object keys
+                [e.target.name as keyof CompanyInfo]: e.target.value
             }
         };
     });

@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
-import { Category } from '../../types';
+// FIX: Corrected import path for types
+import { Category } from '../../core/types';
 import { Icon } from '../Icons';
 import { CategoryEditor } from '../CategoryEditor';
 import { useAppSettings } from '../../contexts/AppSettingsContext';

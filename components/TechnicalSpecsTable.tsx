@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Category, SelectionState, ProjectDetails, QuoteType } from '../types';
-import { SpecCard } from './SpecCard';
-import { Icon } from './Icons';
+import { Category, SelectionState, ProjectDetails, QuoteType } from '../core/types.ts';
+import { SpecCard } from './SpecCard.tsx';
+import { Icon } from './Icons.tsx';
 
 interface TechnicalSpecsTableProps {
   categories: Category[];

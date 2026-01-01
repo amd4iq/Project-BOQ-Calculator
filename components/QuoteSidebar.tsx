@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { SavedQuote, QuoteTemplate } from '../types';
+// FIX: Corrected import path for types
+import { SavedQuote, QuoteTemplate } from '../core/types';
 import { Icon } from './Icons';
 import { useAuth } from './Auth/AuthContext';
 
@@ -165,7 +165,7 @@ export const QuoteSidebar: React.FC<QuoteSidebarProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4 scrollbar-gutter-stable">
             {/* --- Templates Section --- */}
             <div className="p-3 bg-slate-100/70 rounded-xl border border-slate-200/80 mb-6">
                 <div className="mb-4">

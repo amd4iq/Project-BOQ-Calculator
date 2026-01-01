@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { User } from '../../types';
+// FIX: Corrected import path for types
+import { User } from '../../core/types';
 import { Icon } from '../Icons';
 
 interface UserModalProps {

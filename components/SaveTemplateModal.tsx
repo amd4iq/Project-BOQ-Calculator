@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from './Icons';
-import { QuoteType } from '../types';
+// FIX: Corrected import path for types
+import { QuoteType } from '../core/types';
 
 interface SaveTemplateModalProps {
   isOpen: boolean;

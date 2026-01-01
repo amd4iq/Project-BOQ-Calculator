@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { PrintSettings as PrintSettingsType } from '../types';
+// FIX: Corrected import path for types
+import { PrintSettings as PrintSettingsType } from '../core/types';
 import { Icon } from './Icons';
 
 interface PrintSettingsProps {

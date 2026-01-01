@@ -1,6 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { StandardSpec } from '../../types';
+// FIX: Corrected import path for types
+import { StandardSpec } from '../../core/types';
 import { Icon } from '../Icons';
 
 interface StandardSpecsProps {

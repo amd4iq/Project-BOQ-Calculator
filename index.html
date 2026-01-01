@@ -35,198 +35,50 @@
       }
     </script>
     <style>
-      .scrollbar-gutter-stable {
-        scrollbar-gutter: stable;
-      }
-      /* Custom Scrollbar */
+      html { scrollbar-gutter: stable; }
+      .scrollbar-gutter-stable { scrollbar-gutter: stable; }
       ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: #f1f1f1; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-      /* --- Professional Document Print Design --- */
       @media print {
-        @page {
-          size: A4 portrait;
-          margin: 10mm;
-        }
-
-        /* --- Landscape Mode for Archive List --- */
-        @page landscape {
-            size: landscape;
-            margin: 10mm;
-        }
-
-        /* This class forces landscape page and standard minimalist design */
+        @page { size: A4 portrait; margin: 10mm; }
+        @page landscape { size: landscape; margin: 10mm; }
         .print-archive-list {
-            page: landscape;
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background-color: white !important;
-            font-family: sans-serif !important;
+            page: landscape; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; background-color: white !important; font-family: sans-serif !important;
         }
-
-        /* Reset all colors and styles for standard look within archive list */
-        .print-archive-list * {
-            color: black !important;
-            background-color: transparent !important;
-            background-image: none !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
-            border-radius: 0 !important;
-        }
-
-        /* Force standard table grid */
-        .print-archive-list table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            border: 1px solid #000 !important;
-            font-size: 9pt !important; /* Small standard font */
-        }
-
-        .print-archive-list th,
-        .print-archive-list td {
-            border: 1px solid #000 !important;
-            padding: 4px 6px !important;
-            text-align: center !important;
-            vertical-align: middle !important;
-        }
-
-        .print-archive-list th {
-            background-color: #f0f0f0 !important; /* Light grey header */
-            font-weight: bold !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .print-archive-list td {
-             font-weight: normal !important;
-        }
-
-        /* Hide badges visuals, keep text */
-        .print-archive-list .status-badge {
-            border: none !important;
-            padding: 0 !important;
-        }
-
-        /* --- End Landscape Mode --- */
-
-        body {
-          background: white !important;
-          color: black !important;
-          font-family: 'Cairo', sans-serif !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          font-size: 9pt;
-          counter-reset: page;
-        }
-
+        .print-archive-list * { color: black !important; background-color: transparent !important; background-image: none !important; box-shadow: none !important; text-shadow: none !important; border-radius: 0 !important; }
+        .print-archive-list table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #000 !important; font-size: 9pt !important; }
+        .print-archive-list th, .print-archive-list td { border: 1px solid #000 !important; padding: 4px 6px !important; text-align: center !important; vertical-align: middle !important; }
+        .print-archive-list th { background-color: #f0f0f0 !important; font-weight: bold !important; -webkit-print-color-adjust: exact !important; }
+        body { background: white !important; color: black !important; font-family: 'Cairo', sans-serif !important; -webkit-print-color-adjust: exact !important; font-size: 9pt; counter-reset: page; }
         .no-print, .print\:hidden { display: none !important; }
-        .print\:block { display: block !important; }
-
-        /* Reset Tailwind colors for standard black/white print */
-        .print\:text-black { color: #000 !important; }
-        .print\:bg-white { background-color: #fff !important; }
-        .print\:bg-transparent { background-color: transparent !important; }
-        .print\:border-black { border-color: #000 !important; }
-
-        .doc-print-page {
-          height: calc(297mm - 20mm); /* A4 height minus margins */
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          page-break-after: always;
-          box-sizing: border-box;
-          background: white !important;
-        }
-        
-        .doc-print-page:last-child {
-            page-break-after: auto;
-        }
-        
-        /* IMPORTANT: Enforce 4-page limit for standard quotes */
-        .doc-print-page:nth-child(n+5) {
-            display: none !important;
-        }
-
-        .doc-print-header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding-bottom: 3mm;
-            border-bottom: 2pt solid #000;
-            font-size: 9pt;
-        }
-
-        .doc-print-content {
-            flex-grow: 1;
-            width: 100%;
-            padding-top: 5mm;
-        }
-
-        .doc-print-footer {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding-top: 5mm;
-            margin-top: auto; /* Pushes footer to the bottom */
-            border-top: 1pt solid #ccc;
-            font-size: 8pt;
-        }
-
-        .page-number-container::after {
-            counter-increment: page;
-            content: "صفحة " counter(page);
-        }
-
-        .doc-print-title-bar {
-            background-color: #e5e7eb !important;
-            padding: 1.5mm 3mm;
-            font-weight: 800;
-            font-size: 11pt;
-            margin-bottom: 4mm;
-            margin-top: 5mm;
-        }
-
-        .doc-print-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .doc-print-table th {
-            background-color: #f3f4f6 !important;
-            padding: 1.5mm 2mm;
-            text-align: right;
-            font-weight: 700;
-            border: 0.5pt solid #ccc !important;
-        }
-        .doc-print-table td {
-            padding: 1.5mm 2mm; /* Compact rows */
-            border: 0.5pt solid #ddd !important;
-            vertical-align: middle;
-            line-height: 1.3;
-        }
-        .doc-print-table tfoot td {
-            font-weight: 700 !important;
-            background-color: #f3f4f6 !important;
-        }
+        .doc-print-page { height: calc(297mm - 20mm); width: 100%; display: flex; flex-direction: column; page-break-after: always; box-sizing: border-box; background: white !important; }
+        .doc-print-header { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 3mm; border-bottom: 2pt solid #000; font-size: 9pt; }
+        .doc-print-footer { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 5mm; margin-top: auto; border-top: 1pt solid #ccc; font-size: 8pt; }
+        .doc-print-title-bar { background-color: #e5e7eb !important; padding: 1.5mm 3mm; font-weight: 800; font-size: 11pt; margin-bottom: 4mm; margin-top: 5mm; }
+        .doc-print-table { width: 100%; border-collapse: collapse; }
+        .doc-print-table th { background-color: #f3f4f6 !important; padding: 1.5mm 2mm; text-align: right; font-weight: 700; border: 0.5pt solid #ccc !important; }
+        .doc-print-table td { padding: 1.5mm 2mm; border: 0.5pt solid #ddd !important; vertical-align: middle; line-height: 1.3; }
       }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "react": "https://esm.sh/react@^19.2.3",
-        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0",
+    "@/": "./",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react/": "https://esm.sh/react@19.0.0/"
+  }
+}
+</script>
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased selection:bg-primary-100 selection:text-primary-900">
     <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
   </body>
 </html>

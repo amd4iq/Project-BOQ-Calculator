@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Category, Option, CostType } from '../types';
+// FIX: Corrected import path for types
+import { Category, Option, CostType } from '../core/types';
 import { Icon } from './Icons';
 
 interface CategoryEditorProps {

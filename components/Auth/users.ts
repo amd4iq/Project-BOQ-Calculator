@@ -1,5 +1,5 @@
-
-import { User } from '../../types';
+// FIX: Corrected import path for types
+import { User } from '../../core/types';
 
 export const defaultUsers: User[] = [
   {

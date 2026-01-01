@@ -1,23 +1,22 @@
 
 import React, { useState } from 'react';
-import { useAuth } from './components/Auth/AuthContext';
-import { LoginScreen } from './components/Auth/LoginScreen';
-import { AdminSettingsPage } from './components/Settings/AdminSettingsPage';
-import { UserProfilePage } from './components/Settings/UserProfilePage';
-import { QuoteTypeSelector } from './components/QuoteTypeSelector';
-import { ArchiveView } from './components/ArchiveSys/ArchiveView';
-import { Workspace } from './components/Workspace';
-import { useQuote } from './contexts/QuoteContext';
-import { useAppSettings } from './contexts/AppSettingsContext';
-import { ContractsList } from './components/ContractManagement/ContractsList';
-import { ContractDashboard } from './components/ContractManagement/ContractDashboard';
+import { useAuth } from './components/Auth/AuthContext.tsx';
+import { LoginScreen } from './components/Auth/LoginScreen.tsx';
+import { AdminSettingsPage } from './components/Settings/AdminSettingsPage.tsx';
+import { UserProfilePage } from './components/Settings/UserProfilePage.tsx';
+import { QuoteTypeSelector } from './modules/quotes/components/QuoteTypeSelector.tsx';
+import { ArchiveView } from './modules/archive/components/ArchiveView.tsx';
+import { Workspace } from './modules/quotes/components/Workspace.tsx';
+import { useQuote } from './contexts/QuoteContext.tsx';
+import { useAppSettings } from './contexts/AppSettingsContext.tsx';
+import { ContractsList } from './modules/contracts/views/ContractsList.tsx';
+import { ContractDashboard } from './modules/contracts/views/ContractDashboard.tsx';
 
 const App: React.FC = () => {
   const auth = useAuth();
   const { settings } = useAppSettings();
   const { currentQuote, handleCreateQuote, setCurrentQuoteId, quotes, updateQuoteStatus } = useQuote();
   
-  // Navigation State
   const [viewMode, setViewMode] = useState<'workspace' | 'archive' | 'settings' | 'contracts'>('workspace');
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
@@ -49,6 +48,10 @@ const App: React.FC = () => {
                 onUpdateQuoteStatus={updateQuoteStatus}
                 onGoToContracts={() => setViewMode('contracts')}
                 onGoToSettings={() => setViewMode('settings')}
+                onViewContract={(contractId) => {
+                    setSelectedContractId(contractId);
+                    setViewMode('contracts');
+                }}
              />
   }
 
@@ -61,6 +64,10 @@ const App: React.FC = () => {
                 onClose={() => setViewMode('workspace')}
                 onGoToArchive={() => setViewMode('archive')}
                 onGoToSettings={() => setViewMode('settings')}
+                onViewQuote={(quoteId) => {
+                    setCurrentQuoteId(quoteId);
+                    setViewMode('workspace');
+                }}
              />;
   }
 

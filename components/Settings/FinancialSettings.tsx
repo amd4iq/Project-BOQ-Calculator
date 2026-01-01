@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { BasePrices } from '../../types';
+// FIX: Corrected import path for types
+import { BasePrices } from '../../core/types';
 import { Icon } from '../Icons';
 import { useAppSettings } from '../../contexts/AppSettingsContext';
 
@@ -47,7 +47,8 @@ export const FinancialSettings: React.FC = () => {
             ...prev,
             basePrices: {
                 ...prev.basePrices,
-                [e.target.name]: Number(e.target.value) || 0
+                // FIX: Added type assertion to safely handle dynamic object keys
+                [e.target.name as keyof BasePrices]: Number(e.target.value) || 0
             }
         };
     });

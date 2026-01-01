@@ -1,8 +1,9 @@
-
 import React from 'react';
-import { SavedQuote, CompanyInfo, AreaRow, CategorySelection } from '../types';
+// FIX: Corrected import path for types
+import { SavedQuote, CompanyInfo, AreaRow, CategorySelection } from '../core/types';
 import { PrintPageLayout, TitleBar } from './PrintComponents';
-import { formatCurrency } from '../utils/format';
+// FIX: Corrected import path for format utility
+import { formatCurrency } from '../core/utils/format';
 
 type QuoteTotals = any;
 

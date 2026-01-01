@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { ProjectDetails, AreaRow, QuoteType } from '../types';
-import { Icon } from './Icons';
-import { AreaCalculator } from './ConstructionOffers/AreaCalculator';
-import { AreaBreakdownDetails } from './ConstructionOffers/AreaBreakdownDetails';
-import { SpaceDistributor } from './FinishingOffers/SpaceDistributor';
+import { ProjectDetails, AreaRow, QuoteType } from '../core/types.ts';
+import { Icon } from './Icons.tsx';
+import { AreaCalculator } from './ConstructionOffers/AreaCalculator.tsx';
+import { AreaBreakdownDetails } from './ConstructionOffers/AreaBreakdownDetails.tsx';
+import { SpaceDistributor } from './FinishingOffers/SpaceDistributor.tsx';
 
 interface ProjectInfoProps {
   details: ProjectDetails;
@@ -20,13 +20,11 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
   const [isExpanded, setIsExpanded] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  // Determine current mode (default to 'spaces' if undefined for backward compatibility)
   const allocationMode = details.specAllocationMode || (details.enableSpaceDistribution ? 'spaces' : 'percentage');
   const isAllocationEnabled = details.enableSpaceDistribution; 
 
   const handleAllocationToggle = (enabled: boolean) => {
       onChange('enableSpaceDistribution', enabled);
-      // If enabling, ensure a mode is set (default to spaces)
       if (enabled && !details.specAllocationMode) {
           onChange('specAllocationMode', 'spaces');
       }
@@ -150,10 +148,9 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                             <input
                                 type="text"
                                 value={details.employeeName}
-                                onChange={(e) => onChange('employeeName', e.target.value)}
-                                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-sm focus:bg-white focus:border-blue-500 outline-none transition-all disabled:bg-slate-100 disabled:text-slate-500"
+                                className="flex-1 px-4 py-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-sm outline-none cursor-not-allowed"
                                 placeholder="اسم الموظف"
-                                readOnly // Always read-only as it's set by the system
+                                readOnly
                             />
                             <input
                                 type="date"
@@ -166,7 +163,6 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                     </div>
                 </div>
                 
-                {/* 1. Budgeting Tool */}
                 <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${details.enableBudgeting ? 'bg-primary-50/50 border-primary-200' : 'bg-slate-50 border-slate-200'}`}>
                   <div className="flex items-center justify-between">
                     <div>
@@ -214,12 +210,10 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                   )}
                 </div>
 
-                {/* 2. Area Breakdown */}
                 {details.showAreaBreakdownUi && savedBreakdown && savedBreakdown.length > 0 && details.areaSize > 0 && (
                    <AreaBreakdownDetails breakdown={savedBreakdown} totalArea={details.areaSize} />
                 )}
 
-                {/* 3. Spec Allocation (Renamed from Space Distributor) */}
                 {quoteType === 'finishes' && (
                   <div className={`mt-6 p-6 rounded-2xl border transition-all duration-300 ${isAllocationEnabled ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -251,7 +245,6 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
 
                     {isAllocationEnabled && (
                       <div className="mt-4 pt-4 border-t border-indigo-100 animate-in fade-in duration-500">
-                        {/* Allocation Mode Toggle */}
                         <div className="flex justify-center mb-6">
                             <div className="bg-white p-1 rounded-xl border border-indigo-100 inline-flex shadow-sm">
                                 <button
@@ -275,9 +268,6 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
 
                         {allocationMode === 'spaces' && (
                             <div className="animate-in fade-in duration-300">
-                                <p className="text-xs text-slate-500 mb-4 pr-1">
-                                عرّف الفضاءات المختلفة للمشروع وحدد مساحة كل منها. يجب أن يتطابق مجموع المساحات مع المساحة الإجمالية.
-                                </p>
                                 <SpaceDistributor 
                                 spaces={details.spaces || []}
                                 totalArea={details.areaSize}
@@ -292,7 +282,7 @@ export const ProjectInfo: React.FC<ProjectInfoProps> = ({ details, quoteType, on
                                 <div className="inline-block p-3 bg-white rounded-full text-indigo-500 mb-2 shadow-sm"><Icon name="pie-chart" size={24}/></div>
                                 <h5 className="font-bold text-indigo-900 text-sm">نظام النسب المئوية مفعل</h5>
                                 <p className="text-xs text-indigo-700 mt-1 max-w-sm mx-auto">
-                                    يمكنك الآن تحديد نسب مئوية لكل خيار مباشرة من بطاقات المواصفات الفنية أدناه. سيتم احتساب السعر النهائي بناءً على النسب المدخلة.
+                                    يمكنك الآن تحديد نسب مئوية لكل خيار مباشرة من بطاقات المواصفات الفنية أدناه.
                                 </p>
                              </div>
                         )}

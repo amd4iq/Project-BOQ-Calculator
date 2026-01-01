@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { SavedQuote, CompanyInfo } from '../types';
+// FIX: Corrected import path for types
+import { SavedQuote, CompanyInfo } from '../core/types';
 import { StructurePrintModule } from './StructurePrintModule';
 import { FinishesPrintModule } from './FinishesPrintModule';
 

@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../Icons';
-import { AreaRow, AreaShape } from '../../types';
+// FIX: Corrected import path for types
+import { AreaRow, AreaShape } from '../../core/types';
 
 interface AreaCalculatorProps {
   isOpen: boolean;

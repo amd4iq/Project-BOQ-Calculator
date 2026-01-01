@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
-import { Category } from '../types';
-import { formatCurrency } from '../utils/format';
+// FIX: Corrected import path for types
+import { Category } from '../core/types';
+// FIX: Corrected import path for format utility
+import { formatCurrency } from '../core/utils/format';
 import { Icon } from './Icons';
 
 interface FixedAdditionsTableProps {

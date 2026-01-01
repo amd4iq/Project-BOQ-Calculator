@@ -1,8 +1,9 @@
-
 import React, { useState } from 'react';
-import { Category, CategorySelection, ProjectDetails, QuoteType } from '../types';
+// FIX: Corrected import path for types
+import { Category, CategorySelection, ProjectDetails, QuoteType } from '../core/types';
 import { Icon } from './Icons';
-import { formatCurrency } from '../utils/format';
+// FIX: Corrected import path for format utility
+import { formatCurrency } from '../core/utils/format';
 
 interface SpecCardProps {
   category: Category;
@@ -81,7 +82,8 @@ export const SpecCard: React.FC<SpecCardProps> = ({
       let otherTotal = 0;
       Object.entries(newPercentages).forEach(([key, val]) => {
           if (key !== optionId && key !== currentSelection.default) {
-              otherTotal += val;
+              // FIX: Ensure 'val' is treated as a number
+              otherTotal += Number(val);
           }
       });
 
@@ -106,7 +108,8 @@ export const SpecCard: React.FC<SpecCardProps> = ({
   const cleanPercentages = { ...percentages };
   if (currentSelection.default in cleanPercentages) delete cleanPercentages[currentSelection.default];
 
-  const usedPercentage = Object.values(cleanPercentages).reduce((sum, val) => sum + val, 0);
+  // FIX: Ensure values from Object.values are treated as numbers in reduce
+  const usedPercentage = Object.values(cleanPercentages).reduce((sum, val) => sum + Number(val), 0);
   const defaultPercentage = Math.max(0, 100 - usedPercentage);
   
   const isIncluded = (optId: string) => {
