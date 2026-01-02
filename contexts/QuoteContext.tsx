@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { 
   QuoteType, 
@@ -87,6 +88,7 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         
         const constants = getConstantsForQuoteType(type);
         const dynamicCategories = type === 'structure' ? settings.structureCategories : settings.finishesCategories;
+        const dynamicStandardSpecs = type === 'structure' ? settings.structureStandardSpecs : settings.finishesStandardSpecs;
         const now = Date.now();
 
         const newQuote: SavedQuote = {
@@ -117,7 +119,7 @@ export const QuoteProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 enableSpaceDistribution: false,
                 specAllocationMode: 'spaces', // Default allocation mode
             },
-            standardSpecs: constants.DEFAULT_STANDARD_SPECS,
+            standardSpecs: dynamicStandardSpecs,
             printSettings: {
                 ...settings.defaultPrintSettings,
                 logoUrl: settings.companyInfo.logoUrl,

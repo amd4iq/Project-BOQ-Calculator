@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 // FIX: Corrected import path for types
 import { User } from '../../core/types';
@@ -14,7 +15,7 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave, u
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'engineer'>('engineer');
+  const [role, setRole] = useState<User['role']>('engineer');
   const [error, setError] = useState('');
   const isEditing = !!user;
 
@@ -99,10 +100,11 @@ export const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, onSave, u
             <label className="text-sm font-semibold text-slate-700 mb-2 block">الدور/الصلاحية</label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'engineer')}
+              onChange={(e) => setRole(e.target.value as User['role'])}
               className="w-full p-3 rounded-xl bg-slate-100 border border-slate-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-100 outline-none"
             >
               <option value="engineer">مهندس</option>
+              <option value="accountant">محاسب</option>
               <option value="admin">مدير</option>
             </select>
           </div>

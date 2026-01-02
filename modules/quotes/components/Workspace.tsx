@@ -189,7 +189,9 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
     <div className="h-screen flex flex-col bg-slate-100 font-sans text-slate-900 overflow-hidden" dir="rtl">
       <PrintController quote={currentQuote} totals={quoteTotals} companyInfo={settings.companyInfo} />
       
+      {/* Fixed Navbar (h-20) */}
       <nav className="bg-white border-b border-slate-200 px-6 h-20 shrink-0 flex items-center justify-between z-50 print:hidden shadow-sm">
+          {/* RIGHT SIDE */}
           <div className="flex items-center gap-2">
               <button
                   onClick={handleExitWithConfirmation}
@@ -198,12 +200,13 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
               >
                   <Icon name="home" size={20} />
               </button>
-              <button 
-                  onClick={() => setIsSidebarOpen(true)} 
-                  title="إدارة المشاريع"
-                  className="p-3 bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100 rounded-xl transition-all"
+              <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  title="قوالب جاهزة"
+                  className="flex items-center gap-2 bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-all font-bold text-sm"
               >
-                  <Icon name="layers" size={20} />
+                  <Icon name="template" size={16} />
+                  <span>القوالب</span>
               </button>
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div>
@@ -218,6 +221,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ setViewMode, handleGoToWel
               </div>
           </div>
 
+          {/* LEFT SIDE */}
           <div className="flex items-center gap-4">
               {isReadOnly ? (
                   <div className="flex items-center gap-3">

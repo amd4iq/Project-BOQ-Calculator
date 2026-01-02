@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Contract, Expense } from '../../../core/types.ts';
 import { useContract } from '../../../contexts/ContractContext.tsx';
@@ -66,6 +65,7 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
+
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
@@ -201,8 +201,12 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
     }
 
     return (
-        <div className="p-8 space-y-6">
-            <header className="flex justify-between items-start">
+        <div className="p-8 space-y-6 expenses-print-area">
+            <div className="print-only expenses-print-header">
+                {/* Content removed as per user request */}
+            </div>
+
+            <header className="flex justify-between items-start print-hide">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800">سجل المصاريف والديون</h1>
                     <p className="text-slate-500 mt-1">متابعة المصروفات والديون الخاصة بالمشروع</p>
@@ -247,24 +251,33 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print-hide">
                 <StatCard title="إجمالي مصاريف المشروع" value={totalSpent} icon="trending-down" color="rose" />
                 <StatCard title="إجمالي المدفوعات" value={totalPaid} icon="check-simple" color="emerald" />
                 <StatCard title="الديون المتبقية" value={totalDebt} icon="alert" color="amber" />
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:rounded-none expenses-table-container">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm print-table">
                         <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                             <tr>
                                 <th className="p-3 text-center w-12">#</th>
-                                {['التاريخ', 'الوصف', 'المستفيد', 'النوع', 'المبلغ الكلي', 'المدفوع / المتبقي', 'الحالة', 'الإجراءات'].map(h => <th key={h} className="p-3 text-right">{h}</th>)}
+                                {['التاريخ', 'الوصف', 'المستفيد', 'النوع', 'المبلغ الكلي', 'المدفوع / المتبقي', 'الحالة'].map(h => <th key={h} className="p-3 text-right">{h}</th>)}
+                                <th className="p-3 text-right print-table-cell-hide">الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredExpenses.map((exp, index) => {
                                 const remaining = exp.amount - (exp.paidAmount || 0);
+                                let statusText = '';
+                                if (exp.paymentMethod === 'Cash' || remaining <= 0) {
+                                    statusText = 'مسدد';
+                                } else if ((exp.paidAmount || 0) > 0) {
+                                    statusText = `مسدد جزئياً (${formatCurrency(remaining)} متبقي)`;
+                                } else {
+                                    statusText = 'بذمتنا';
+                                }
                                 return (
                                 <tr key={exp.id} className="hover:bg-slate-50">
                                     <td className="p-3 font-mono text-slate-400 text-center">{index + 1}</td>
@@ -281,8 +294,11 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="p-3 w-32">{renderStatusBadge(exp)}</td>
-                                    <td className="p-3">
+                                    <td className="p-3 w-32">
+                                        <div className="print-hide">{renderStatusBadge(exp)}</div>
+                                        <span className="hidden print-only text-xs">{statusText}</span>
+                                    </td>
+                                    <td className="p-3 print-table-cell-hide">
                                         <button onClick={(e) => handleMenuToggle(e, exp.id)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-md"><Icon name="settings" size={16}/></button>
                                     </td>
                                 </tr>
@@ -292,11 +308,13 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
                 </div>
             </div>
             
+            <div className="print-only expenses-print-footer"></div>
+            
             {openMenuId && menuPosition && selectedExpenseForMenu && (
                 <div
                     ref={actionMenuRef}
                     style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
-                    className="fixed w-48 bg-white border border-slate-200 rounded-lg shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95"
+                    className="fixed w-48 bg-white border border-slate-200 rounded-lg shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95 print-hide"
                 >
                     {(() => {
                         const remaining = selectedExpenseForMenu.amount - (selectedExpenseForMenu.paidAmount || 0);
@@ -321,7 +339,7 @@ export const ExpensesTab: React.FC<{ contract: Contract }> = ({ contract }) => {
             
             {/* Enhanced Image Preview */}
             {previewData && (
-                <div className="fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4" onClick={() => setPreviewData(null)}>
+                <div className="fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4 print-hide" onClick={() => setPreviewData(null)}>
                     <div 
                         className="bg-slate-50 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col md:flex-row overflow-hidden"
                         onClick={(e) => e.stopPropagation()}

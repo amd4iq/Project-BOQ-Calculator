@@ -67,7 +67,7 @@ export const LoginScreen: React.FC = () => {
           </button>
         </form>
          <div className="text-center mt-4 text-xs text-slate-500">
-            <p>للتجربة: admin / admin123  |  engineer / engineer123</p>
+            <p>للتجربة: admin/admin123 | engineer/engineer123 | accountant/accountant123</p>
          </div>
       </div>
       

@@ -1,15 +1,23 @@
 
-import React from 'react';
-import { useContract } from '../../../contexts/ContractContext.tsx';
-import { Icon } from '../../../components/Icons.tsx';
+import React, { useState } from 'react';
+import { LaborList } from './labor/LaborList';
+import { WorkerProfile } from './labor/WorkerProfile';
 
 export const LaborTab: React.FC<{ contractId?: string }> = ({ contractId }) => {
-    const { workers } = useContract();
-    // Logic to filter workers based on contractId if provided
+    const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+
+    if (selectedWorkerId) {
+        return (
+            <WorkerProfile 
+                workerId={selectedWorkerId} 
+                onBack={() => setSelectedWorkerId(null)}
+            />
+        );
+    }
+
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-black text-slate-800">العمال والأجور</h1>
-            {/* Display list of workers */}
-        </div>
+        <LaborList 
+            onSelectWorker={setSelectedWorkerId}
+        />
     );
 };

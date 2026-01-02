@@ -60,12 +60,23 @@ const App: React.FC = () => {
   }
 
   if (viewMode === 'contracts') {
+      if (auth.currentUser.role === 'engineer') {
+          // Safeguard: Engineers cannot access contracts view. Redirect them.
+          setViewMode('workspace');
+          return null; 
+      }
       if (selectedContractId) {
-          return <ContractDashboard contractId={selectedContractId} onBack={() => setSelectedContractId(null)} />
+          return <ContractDashboard 
+                    contractId={selectedContractId} 
+                    onBack={() => setSelectedContractId(null)}
+                    onClose={handleGoToWelcome}
+                    onGoToArchive={() => setViewMode('archive')}
+                    onGoToSettings={() => setViewMode('settings')}
+                 />
       }
       return <ContractsList 
                 onSelectContract={setSelectedContractId} 
-                onClose={() => setViewMode('workspace')}
+                onClose={handleGoToWelcome}
                 onGoToArchive={() => setViewMode('archive')}
                 onGoToSettings={() => setViewMode('settings')}
                 onViewQuote={(quoteId) => {
@@ -75,7 +86,14 @@ const App: React.FC = () => {
              />;
   }
 
+  // Role-based routing for the "welcome" screen
   if (!currentQuote) {
+    // Accountants go directly to contracts
+    if (auth.currentUser.role === 'accountant') {
+        setViewMode('contracts');
+        return null;
+    }
+    // Admins and Engineers see the quote type selector
     return <QuoteTypeSelector 
         onSelect={(type) => {
             handleCreateQuote(type);
@@ -87,6 +105,8 @@ const App: React.FC = () => {
     />;
   }
 
+  // If there's a current quote, show the workspace
+  // (An accountant should not be able to reach this state)
   return (
     <Workspace 
         setViewMode={setViewMode} 

@@ -53,6 +53,7 @@ export interface ProjectDetails {
   customerNumber: string;
   areaSize: number; 
   numberOfFloors: number;
+  location?: string;
   spaces?: Space[];
   basePricePerM2?: number;
   targetBudget?: number;
@@ -149,7 +150,7 @@ export interface User {
   id: string;
   name: string;
   displayName?: string;
-  role: 'engineer' | 'admin';
+  role: 'engineer' | 'admin' | 'accountant';
   password?: string;
 }
 
@@ -164,6 +165,16 @@ export interface CompanyInfo {
 export interface BasePrices {
     structure: number;
     finishes: number;
+}
+
+export interface AppSettings {
+  structureCategories: Category[];
+  finishesCategories: Category[];
+  structureStandardSpecs: StandardSpec[];
+  finishesStandardSpecs: StandardSpec[];
+  companyInfo: CompanyInfo;
+  defaultPrintSettings: PrintSettings;
+  basePrices: BasePrices;
 }
 
 // --- Contract Management Types ---
@@ -245,6 +256,16 @@ export interface ReceivedPayment {
   note?: string;
   isExtra?: boolean;
   attachmentUrl?: string;
+  recordedBy?: string;
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  url: string; // data URL
+  type: string; // file mime type
+  addedAt: number;
+  originalFilename: string;
 }
 
 export interface Contract {
@@ -259,4 +280,5 @@ export interface Contract {
   startDate: number;
   duration?: number;
   paymentSchedule: PaymentStage[]; 
+  attachments?: Attachment[];
 }

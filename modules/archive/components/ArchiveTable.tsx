@@ -9,7 +9,7 @@ import { useContract } from '../../../contexts/ContractContext.tsx';
 
 interface ArchiveTableProps {
   quotes: SavedQuote[];
-  role: 'engineer' | 'admin';
+  role: 'engineer' | 'admin' | 'accountant';
   onViewQuote: (id: string) => void;
   onUpdateQuoteStatus: (id: string, status: QuoteStatus, updates?: Partial<SavedQuote>) => void;
   onDuplicateQuote: (id: string, targetStatus?: QuoteStatus) => void;
@@ -69,7 +69,6 @@ export const ArchiveTable: React.FC<ArchiveTableProps> = ({ quotes, role, onView
                     {quotes.map((quote, index) => {
                         const totals = calculateQuoteTotals(quote.categories, quote.selections, quote.projectDetails, quote.quoteType);
                         const contract = contracts.find(c => c.quoteId === quote.id);
-                        const canRevise = (quote.status === 'Printed - Pending Client Approval') || (role === 'admin' && ['Approved by Client', 'Rejected by Client', 'Expired'].includes(quote.status));
                         
                         return (
                         <tr key={quote.id} className="hover:bg-slate-50 transition-colors print:hover:bg-transparent">
@@ -127,33 +126,31 @@ export const ArchiveTable: React.FC<ArchiveTableProps> = ({ quotes, role, onView
                             <td className="p-3 align-middle print:hidden" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1 w-full relative">
                                     {/* Primary actions */}
-                                    {quote.status === 'Draft' && <button onClick={() => onViewQuote(quote.id)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="إكمال العرض"><Icon name="pencil" size={16} /></button>}
-                                    {quote.status === 'Under Revision' && <button onClick={() => onViewQuote(quote.id)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="الانتقال للتعديل"><Icon name="pencil" size={16} /></button>}
-                                    {quote.status === 'Printed - Pending Client Approval' && (
+                                    {role === 'admin' && quote.status === 'Draft' && <button onClick={() => onViewQuote(quote.id)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="إكمال العرض"><Icon name="pencil" size={16} /></button>}
+                                    {role === 'admin' && quote.status === 'Under Revision' && <button onClick={() => onViewQuote(quote.id)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="الانتقال للتعديل"><Icon name="pencil" size={16} /></button>}
+                                    {role === 'admin' && quote.status === 'Printed - Pending Client Approval' && (
                                         <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
                                             <button onClick={() => { if(window.confirm(`موافقة العميل على ${quote.offerNumber}؟`)) { onUpdateQuoteStatus(quote.id, 'Approved by Client', { approvedByClientAt: Date.now() }); }}} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="موافقة"><Icon name="check-simple" size={16} /></button>
                                             <div className="w-px h-3 bg-slate-200 mx-0.5"></div>
                                             <button onClick={() => { if(window.confirm(`رفض العميل للعرض ${quote.offerNumber}؟`)) { onUpdateQuoteStatus(quote.id, 'Rejected by Client', { rejectedByClientAt: Date.now() }); }}} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-md transition-colors" title="رفض"><Icon name="x" size={16} /></button>
                                         </div>
                                     )}
-                                    {quote.status === 'Approved by Client' && role === 'admin' && (
+                                    {(role === 'admin' || role === 'accountant') && quote.status === 'Approved by Client' && (
                                         <button onClick={() => { if(window.confirm(`توقيع العقد للعرض ${quote.offerNumber}؟`)) { createContractFromQuote(quote); onUpdateQuoteStatus(quote.id, 'Contract Signed'); alert("تم إنشاء العقد بنجاح!"); }}} className="text-[10px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1.5 rounded-lg shadow-sm shadow-indigo-200 transition-all flex items-center gap-1 whitespace-nowrap"><Icon name="contract" size={14} />توقيع العقد</button>
                                     )}
 
-                                    {/* Settings Dropdown - Always visible */}
+                                    {/* Settings Dropdown */}
                                     <div ref={openMenuId === quote.id ? menuRef : null}>
                                         <button onClick={() => setOpenMenuId(openMenuId === quote.id ? null : quote.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="إجراءات إضافية"><Icon name="settings" size={16} /></button>
                                         {openMenuId === quote.id && (
                                             <div className="absolute left-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2 z-50 animate-in fade-in zoom-in-95">
-                                                {canRevise && <button onClick={() => { if(window.confirm('فتح قفل التعديل؟ سيتم إنشاء نسخة جديدة للمراجعة.')) { onUpdateQuoteStatus(quote.id, 'Under Revision'); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700"><Icon name="rotate-ccw" size={14}/> فتح قفل التعديل</button>}
-                                                <button onClick={() => { if(window.confirm('إنشاء نسخة جديدة من هذا العرض؟')) { onDuplicateQuote(quote.id, 'Under Revision'); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700"><Icon name="copy" size={14}/> نسخ كعرض جديد</button>
+                                                {role === 'admin' && <button onClick={() => { if(window.confirm('فتح قفل التعديل؟ سيتم إنشاء نسخة جديدة للمراجعة.')) { onUpdateQuoteStatus(quote.id, 'Under Revision'); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700"><Icon name="rotate-ccw" size={14}/> فتح قفل التعديل</button>}
+                                                {role === 'admin' && <button onClick={() => { if(window.confirm('إنشاء نسخة جديدة من هذا العرض؟')) { onDuplicateQuote(quote.id, 'Under Revision'); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700"><Icon name="copy" size={14}/> نسخ كعرض جديد</button>}
+                                                
                                                 {quote.status !== 'Draft' && <button onClick={() => { onOpenPrintLog(quote); setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-slate-100 text-slate-700"><Icon name="printer" size={14}/> سجل الطباعة</button>}
                                                 
-                                                {quote.status === 'Draft' && onDeleteQuote && (
-                                                    <><div className="h-px bg-slate-100 my-1"></div><button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذه المسودة نهائياً؟')) { onDeleteQuote(quote.id); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-rose-50 text-rose-600"><Icon name="trash" size={14}/> حذف المسودة</button></>
-                                                )}
-                                                {quote.status !== 'Draft' && role === 'admin' && onDeleteQuote && (
-                                                    <><div className="h-px bg-slate-100 my-1"></div><button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذا العرض نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) { onDeleteQuote(quote.id); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-rose-50 text-rose-600"><Icon name="trash" size={14}/> حذف نهائي</button></>
+                                                {role === 'admin' && onDeleteQuote && (
+                                                    <><div className="h-px bg-slate-100 my-1"></div><button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذا العرض نهائياً؟')) { onDeleteQuote(quote.id); } setOpenMenuId(null); }} className="w-full text-right flex items-center gap-2 p-2 rounded-lg text-xs font-semibold hover:bg-rose-50 text-rose-600"><Icon name="trash" size={14}/> حذف نهائي</button></>
                                                 )}
                                             </div>
                                         )}

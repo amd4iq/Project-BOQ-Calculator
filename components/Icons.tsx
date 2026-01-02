@@ -62,7 +62,8 @@ import {
   Calendar,
   FileSignature,
   Filter,
-  ArrowLeft
+  ArrowLeft,
+  Paperclip
 } from 'lucide-react';
 
 interface IconProps {
@@ -142,6 +143,7 @@ export const Icon: React.FC<IconProps> = ({ name, className = "", size = 20 }) =
     case 'alert': return <AlertCircle className={className} size={size} />;
     case 'calendar': return <Calendar className={className} size={size} />;
     case 'contract': return <FileSignature className={className} size={size} />;
+    case 'paperclip': return <Paperclip className={className} size={size} />;
     
     default: return <Layers className={className} size={size} />;
   }

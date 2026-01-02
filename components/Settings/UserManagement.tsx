@@ -1,6 +1,6 @@
+
 import React, { useState } from 'react';
-// FIX: Corrected import path for types
-import { User } from '../../core/types';
+import { User } from '../../core/types.ts';
 import { useAuth } from '../Auth/AuthContext';
 import { Icon } from '../Icons';
 import { UserModal } from './UserModal';
@@ -23,10 +23,8 @@ export const UserManagement: React.FC = () => {
   const handleSaveUser = (userToSave: User) => {
     let updatedUsers;
     if (userToSave.id && users.some(u => u.id === userToSave.id)) {
-      // Edit existing user
       updatedUsers = users.map(u => u.id === userToSave.id ? userToSave : u);
     } else {
-      // Add new user
       updatedUsers = [...users, { ...userToSave, id: `user-${Date.now()}` }];
     }
     updateUsers(updatedUsers);
@@ -42,6 +40,24 @@ export const UserManagement: React.FC = () => {
       updateUsers(users.filter(u => u.id !== id));
     }
   };
+
+  const getRoleStyle = (role: User['role']) => {
+      switch(role) {
+          case 'admin': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+          case 'accountant': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+          case 'engineer':
+          default:
+              return 'bg-slate-100 text-slate-600 border-slate-200';
+      }
+  };
+  const getRoleLabel = (role: User['role']) => {
+    switch(role) {
+        case 'admin': return 'مدير';
+        case 'accountant': return 'محاسب';
+        case 'engineer': return 'مهندس';
+        default: return role;
+    }
+  }
 
   return (
     <>
@@ -60,41 +76,37 @@ export const UserManagement: React.FC = () => {
           </button>
         </header>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50/70 border-b-2 border-slate-200">
-              <tr>
-                <th className="p-4 font-extrabold text-slate-600 text-right w-2/5">الاسم</th>
-                <th className="p-4 font-extrabold text-slate-600 text-right w-1/5">الدور/الصلاحية</th>
-                <th className="p-4 font-extrabold text-slate-600 text-right w-2/5">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {users.map(user => (
-                <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="p-4">
-                      <p className="font-bold text-slate-800">{user.displayName || user.name}</p>
-                      <p className="text-xs text-slate-400 font-mono">@{user.name}</p>
-                  </td>
-                  <td className="p-4">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${user.role === 'admin' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                      {user.role === 'admin' ? 'مدير' : 'مهندس'}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {users.map(user => (
+            <div key={user.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col hover:shadow-md hover:border-indigo-200 transition-all group">
+              <div className="flex-grow">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-bold text-lg text-slate-800">{user.displayName || user.name}</h3>
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getRoleStyle(user.role)}`}>
+                        {getRoleLabel(user.role)}
                     </span>
-                  </td>
-                  <td className="p-4 text-left">
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenModal(user)} className="flex items-center gap-1.5 text-xs font-bold bg-white text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-400 transition-colors">
-                            <Icon name="pencil" size={14} /> تعديل
-                        </button>
-                        <button onClick={() => handleDeleteUser(user.id)} className="flex items-center gap-1.5 text-xs font-bold bg-white text-rose-600 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-rose-400 hover:bg-rose-50 transition-colors">
-                            <Icon name="trash" size={14} /> حذف
-                        </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </div>
+                <p className="text-sm text-slate-400 font-mono">@{user.name}</p>
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button 
+                  onClick={() => handleDeleteUser(user.id)}
+                  className="p-2 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                  title="حذف"
+                >
+                  <Icon name="trash" size={18} />
+                </button>
+                <button 
+                  onClick={() => handleOpenModal(user)}
+                  className="flex items-center gap-2 text-sm font-bold bg-white text-slate-700 px-4 py-2 rounded-lg border border-slate-200 hover:border-slate-400 transition-colors"
+                >
+                  <Icon name="pencil" size={14} /> 
+                  تعديل
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       

@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { CompanyInfo, PrintSettings, BasePrices, Category } from '../core/types.ts';
+import { CompanyInfo, PrintSettings, BasePrices, Category, AppSettings, StandardSpec } from '../core/types.ts';
 import * as structureConstants from '../core/constants/structure.ts';
 import * as finishesConstants from '../core/constants/finishes.ts';
 
@@ -15,17 +15,11 @@ const defaultTerms = `1. مدة صلاحية هذا العرض هي 14 يوما�
 7. مدة تنفيذ المشروع المتوقعة سيتم تحديدها في العقد النهائي.
 8. الأسعار لا تشمل رسوم ربط الماء والكهرباء والمجاري بالشبكة العامة.`;
 
-export interface AppSettings {
-  structureCategories: Category[];
-  finishesCategories: Category[];
-  companyInfo: CompanyInfo;
-  defaultPrintSettings: PrintSettings;
-  basePrices: BasePrices;
-}
-
 const initialAppSettings: AppSettings = {
     structureCategories: structureConstants.CATEGORIES,
     finishesCategories: finishesConstants.CATEGORIES,
+    structureStandardSpecs: structureConstants.DEFAULT_STANDARD_SPECS,
+    finishesStandardSpecs: finishesConstants.DEFAULT_STANDARD_SPECS,
     companyInfo: {
         name: 'شركة معالم بغداد للمقاولات العامة',
         address: 'بغداد - المنصور - تقاطع الرواد',

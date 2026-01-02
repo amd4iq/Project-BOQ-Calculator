@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { SavedQuote, QuoteStatus } from '../../../core/types.ts';
 import { Icon } from '../../../components/Icons.tsx';
@@ -14,7 +13,8 @@ interface ArchiveViewProps {
     allQuotes: SavedQuote[];
     onClose: () => void;
     onViewQuote: (id: string) => void;
-    role: 'engineer' | 'admin';
+    // FIX: Allow 'accountant' role to be passed to fix type error in App.tsx.
+    role: 'engineer' | 'admin' | 'accountant';
     onUpdateQuoteStatus: (id: string, status: QuoteStatus, updates?: Partial<SavedQuote>) => void;
     onGoToContracts: () => void;
     onGoToSettings: () => void;

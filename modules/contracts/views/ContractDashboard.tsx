@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useContract } from '../../../contexts/ContractContext.tsx';
 import { Icon } from '../../../components/Icons.tsx';
@@ -14,6 +13,9 @@ import { useAuth } from '../../../components/Auth/AuthContext.tsx';
 interface ContractDashboardProps {
     contractId: string;
     onBack: () => void;
+    onClose: () => void;
+    onGoToArchive: () => void;
+    onGoToSettings: () => void;
 }
 
 const NavButton: React.FC<{
@@ -36,22 +38,7 @@ const NavButton: React.FC<{
 );
 
 
-const IconButton: React.FC<{ icon: string; onClick: () => void; title: string; isDestructive?: boolean; }> = ({ icon, onClick, title, isDestructive = false }) => (
-    <button
-        onClick={onClick}
-        title={title}
-        className={`flex-1 flex items-center justify-center py-2 rounded-lg font-bold transition-all active:scale-95 border shadow-sm ${
-            isDestructive 
-            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-100'
-            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
-        }`}
-    >
-        <Icon name={icon} size={18} />
-    </button>
-);
-
-
-export const ContractDashboard: React.FC<ContractDashboardProps> = ({ contractId, onBack }) => {
+export const ContractDashboard: React.FC<ContractDashboardProps> = ({ contractId, onBack, onClose, onGoToArchive, onGoToSettings }) => {
     const { contracts, updateContractStatus } = useContract();
     const { logout, currentUser } = useAuth();
     const contract = contracts.find(c => c.id === contractId);
@@ -146,22 +133,22 @@ export const ContractDashboard: React.FC<ContractDashboardProps> = ({ contractId
                         العودة لقائمة المشاريع
                     </button>
                     
-                    <div className="flex items-center gap-2">
-                        <IconButton
-                            icon="printer"
-                            onClick={() => window.print()}
-                            title="طباعة تقرير المشروع"
-                        />
-
-                        <IconButton
-                            icon="log-out"
-                            onClick={logout}
-                            title="خروج"
-                            isDestructive={true}
-                        />
-                    </div>
-                     <div className="pt-3 border-t border-slate-200 text-center">
-                        <p className="text-sm font-bold text-slate-700">{currentUser?.displayName}</p>
+                    <div className="flex items-center justify-around pt-3 border-t border-slate-200">
+                        <button onClick={onClose} title="الرئيسية" className="p-3 text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">
+                            <Icon name="home" size={20} />
+                        </button>
+                        <button disabled title="إدارة العقود" className="p-3 text-indigo-600 bg-indigo-100 rounded-lg">
+                            <Icon name="briefcase" size={20} />
+                        </button>
+                        <button onClick={onGoToArchive} title="الأرشيف" className="p-3 text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">
+                            <Icon name="archive" size={20} />
+                        </button>
+                        <button onClick={onGoToSettings} title="الإعدادات" className="p-3 text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">
+                            <Icon name="settings" size={20} />
+                        </button>
+                        <button onClick={logout} title="خروج" className="p-3 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                            <Icon name="log-out" size={20} />
+                        </button>
                     </div>
                 </div>
             </aside>

@@ -54,7 +54,7 @@ export const QuoteTypeSelector: React.FC<QuoteTypeSelectorProps> = ({ onSelect, 
 
       <footer className="absolute bottom-8 left-8 right-8 flex flex-col items-center gap-4">
         <div className="flex items-center gap-3">
-             {currentUser?.role === 'admin' && (
+             {(currentUser?.role === 'admin' || currentUser?.role === 'accountant') && (
                 <button
                     onClick={onGoToContracts}
                     className="flex items-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 hover:text-white py-2 px-4 rounded-xl font-bold text-sm transition-all border border-indigo-500/30"

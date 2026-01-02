@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Icon } from '../Icons';
 import { UserManagement } from './UserManagement';
@@ -36,21 +35,6 @@ const NavButton: React.FC<{
     </button>
 );
 
-const IconButton: React.FC<{ icon: string; onClick: () => void; title: string; isDestructive?: boolean; }> = ({ icon, onClick, title, isDestructive = false }) => (
-    <button
-        onClick={onClick}
-        title={title}
-        className={`flex-1 flex items-center justify-center py-2 rounded-lg font-bold transition-all active:scale-95 border shadow-sm ${
-            isDestructive 
-            ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-100'
-            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
-        }`}
-    >
-        <Icon name={icon} size={18} />
-    </button>
-);
-
-
 export const AdminSettingsPage: React.FC<AdminSettingsPageProps> = ({ onClose, onGoToArchive, onGoToContracts }) => {
   const [activeTab, setActiveTab] = useState<Tab>('users');
   const { currentUser, logout } = useAuth();
@@ -73,21 +57,23 @@ export const AdminSettingsPage: React.FC<AdminSettingsPageProps> = ({ onClose, o
             <NavButton icon="dollar-sign" label="الإعدادات المالية" isActive={activeTab === 'financial'} onClick={() => setActiveTab('financial')} />
             <NavButton icon="file-text" label="الشروط والأحكام" isActive={activeTab === 'terms'} onClick={() => setActiveTab('terms')} />
         </nav>
-        <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-3">
-          <button
-            onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg font-bold transition-all active:scale-95 text-sm"
-          >
-            <Icon name="home" size={18} />
-            العودة للرئيسية
-          </button>
-          <div className="flex items-center gap-2">
-              <IconButton icon="archive" onClick={onGoToArchive} title="الأرشيف" />
-              <IconButton icon="briefcase" onClick={onGoToContracts} title="إدارة العقود" />
-              <IconButton icon="log-out" onClick={logout} title="خروج" isDestructive={true} />
-          </div>
-           <div className="pt-3 border-t border-slate-200 text-center">
-                <p className="text-sm font-bold text-slate-700">{currentUser?.displayName}</p>
+        <div className="p-3 border-t border-slate-200 bg-slate-50">
+            <div className="flex items-center justify-around">
+                <button onClick={onClose} title="الرئيسية" className="p-3 text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">
+                    <Icon name="home" size={20} />
+                </button>
+                <button onClick={onGoToContracts} title="إدارة العقود" className="p-3 text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">
+                    <Icon name="briefcase" size={20} />
+                </button>
+                <button onClick={onGoToArchive} title="الأرشيف" className="p-3 text-slate-500 hover:bg-slate-200 rounded-lg transition-colors">
+                    <Icon name="archive" size={20} />
+                </button>
+                <button disabled title="الإعدادات" className="p-3 text-indigo-600 bg-indigo-100 rounded-lg">
+                    <Icon name="settings" size={20} />
+                </button>
+                <button onClick={logout} title="خروج" className="p-3 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                    <Icon name="log-out" size={20} />
+                </button>
             </div>
         </div>
       </aside>

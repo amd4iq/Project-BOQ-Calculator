@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 // FIX: Corrected import path for types
 import { SavedQuote, QuoteTemplate } from '../core/types';
@@ -137,8 +138,8 @@ export const QuoteSidebar: React.FC<QuoteSidebarProps> = ({
         <div className="flex flex-col h-full">
           <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-              <Icon name="layers" className="text-primary-600" />
-              إدارة المشاريع
+              <Icon name="template" className="text-primary-600" />
+              القوالب وإدارة العروض
             </h2>
             <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
               <Icon name="x" size={20} />
@@ -146,23 +147,14 @@ export const QuoteSidebar: React.FC<QuoteSidebarProps> = ({
           </div>
 
           <div className="p-4 border-b border-slate-100">
-            <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => { onNewQuote(); onClose(); }}
-                  className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-xl font-bold shadow-md shadow-primary-500/20 transition-all active:scale-95"
-                >
-                  <Icon name="plus" size={18} />
-                  عرض جديد
-                </button>
-                <button
-                  onClick={onSaveTemplate}
-                  disabled={isReadOnly}
-                  className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  <Icon name="plus" size={18} />
-                  إضافة قالب
-                </button>
-            </div>
+            <button
+              onClick={onSaveTemplate}
+              disabled={isReadOnly}
+              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none"
+            >
+              <Icon name="plus" size={18} />
+              إضافة قالب
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 scrollbar-gutter-stable">
